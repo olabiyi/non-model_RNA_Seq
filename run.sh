@@ -102,14 +102,28 @@ DESEQ2=$(echo $CONDA_PREFIX| sed -e "s:envs/non_model_RNA_Seq::g")
 BUSCO_DATABASE=$(echo $BUSCO_DATABASE| sed -e "s/\.tar\.gz//g")
 RNA_DATABASE=$(ls $CONDA_PREFIX/databases/rRNA/)
 
-declare -a TO_REPLACE=(RNA_DATABASE SAMPLE_MAPPING_FILE TRANSCRIPT_PREFIX TREATMANT_NAME COMPARISON CONDA_PATH DESEQ2 BUSCO_DATABASE QSUB_Q QSUB_NODES MINIMUM_COUNT MINIMUM_REPLICATES)
+declare -a TO_REPLACE=(RNA_DATABASE SAMPLE_MAPPING_FILE TRANSCRIPT_PREFIX TREATMENT_NAME COMPARISON CONDA_PATH DESEQ2 BUSCO_DATABASE QSUB_Q QSUB_NODES MINIMUM_COUNT MINIMUM_REPLICATES)
 declare -a REPLACEMENTS=($RNA_DATABASE $SAMPLE_MAPPING_FILE $TRANSCRIPT_PREFIX $TREATMENT_NAME $COMPARISON $CONDA_PREFIX $DESEQ2 $BUSCO_DATABASE $QSUB_Q $QSUB_NODES $MINIMUM_COUNT $MINIMUM_REPLICATES)
 
 # Get length of an array
-arraylength=${#REPLACEMENTS[@]}
+arraylength=${#TO_REPLACE[@]}
+
+
 # Set names
-for (( i=1; i<${arraylength}+1; i++ )); do 
-sed -i -E "s:${TO_REPLACE[$i-1]}:${REPLACEMENTS[$i-1]}:g" ${PARAMETER_FILE}
+for (( i=0; i<${arraylength}; i++ )); do
+ 
+declare inFile=$(grep -c "${TO_REPLACE[$i]}" "${PARAMETER_FILE}")	
+
+	# Check if there is something to replace
+
+	if [ $inFile -eq 0 ]; then
+
+ 		continue
+	else
+
+		sed -i -E "s:${TO_REPLACE[$i]}:${REPLACEMENTS[$i]}:g" ${PARAMETER_FILE}
+	fi
+
 done
 
 source deactivate 
@@ -118,8 +132,9 @@ source deactivate
 source activate NeatSeq_Flow
 export CONDA_BASE=$(conda info --root)
 neatseq_flow.py -s $SAMPLE_FILE -p $PARAMETER_FILE -g $SAMPLE_MAPPING_FILE
+
 if [ "${TAG}" == "all" ]; then
-bash scripts/00.workflow.commands.sh  1> null &
+	bash scripts/00.workflow.commands.sh  1> null &
 else
-bash scripts/tags_scripts/${TAG}.sh || echo "The tag - $TAG you provided does not exist, please provide a valid tag and run again"; exit 1;
+	bash scripts/tags_scripts/${TAG}.sh || echo "The tag - $TAG you provided does not exist, please provide a valid tag and run again"; exit 1;
 fi

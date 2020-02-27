@@ -14,12 +14,14 @@ dependencies:
   - r-tidyverse
   - rstudio
   - pandoc
+  - r-optparse
   
 # Bioconductor
   - bioconductor-biobase
   - bioconductor-biocgenerics
   - bioconductor-biocparallel
   - bioconductor-biostrings
+  - bioconductor-edger  
 
 #Perl
   - perl=5.26.2

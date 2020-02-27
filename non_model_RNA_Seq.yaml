@@ -105,7 +105,7 @@ Vars:
 # ----- Set other important global variables
     grouping:   SAMPLE_MAPPING_FILE
     Transcript_prefix:    TRANSCRIPT_PREFIX    # Prefix to use when renaming transcripts
-    Treatment_name:    TREATMANT_NAME    # group name in samples_mapping_file.txt to use during filtering
+    Treatment_name:    TREATMENT_NAME    # group name in samples_mapping_file.txt to use during filtering
     min_count:    MINIMUM_COUNT    #  Minimum count for filtering out lowly expresed transcripts
     min_sample:    MINIMUM_REPLICATES  # Minimum number of samples or replicates within a treatment group to use during filtering
 
@@ -114,7 +114,7 @@ Vars:
     DeSeq2:
        conda_env:    DESEQ2
        SAMPLE_DATA: SAMPLE_MAPPING_FILE
-       design:    ~TREATMANT_NAME # Model design
+       design:    ~TREATMENT_NAME # Model design
        contrast:    COMPARISON
 
 Step_params:
