@@ -25,7 +25,7 @@ dependencies:
 
 #Perl
   - perl=5.26.2
-  - perl-dbd-sqlite= 1.64
+  - perl-dbd-sqlite=1.64
   - perl-dbi=1.642
   - perl-xml-simple=2.25
 
