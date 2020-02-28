@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
+
 # AUTHOR : Olabiyi Obayomi (obadbotanist@yahoo.com)
+# VERSION : 1.0
 
 set -e
 
@@ -8,24 +10,24 @@ USAGE="$(basename "$0") [-h] [-p file] [ -s file -m file -t value -g value -c va
 
 --EXAMPLE: "$(basename "$0")" -s sample_file.nsfs -p non_model_RNA_Seq.yaml -m sample_grouping.txt 
                               -t CUTICULA  -b metazoa_odb9.tar.gz  -q bioinfo.q 
-							  -g Treatment -c Treatment,level1,level2|Treatment,level1,level3|Treatment,level2,level3
-							  -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22
-							  -T 00.Quality_check -R 2 -C 3
+			      -g Treatment -c Treatment,level1,level2|Treatment,level1,level3|Treatment,level2,level3
+			      -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22
+			      -T 00.Quality_check -R 2 -C 3
 where:
     -h  Show this help text.
-    -p  Neatseq_flow parameter file to modify and run. It must be correctly formated as the default file. Default: downloads it from the internet.
+    -p  Neatseq_flow parameter file to modify and run. It must be correctly formated as the default file. By default it will be downloaded from the internet.
     -s  Neatseq_flow sample file.
     -m  Samples to treatment mapping file.
     -t  Prefix to use when renaming transcripts. Default: ''.
-    -g  Group or Treatment name on the mapping file to use for filtering and statistical analysis.
+    -g  Group or treatment name on the mapping file to use during filtering and statistical analysis.
     -c  Contrast or comparison to use during DeSeq2 analysis. Multiple comparisons should be separted by '|'.
 	     Example Treatment,level1,level2|Treatment,level1,level3. Default: run all possible comparisons.
-	-b  Tar file name of your choice BUSCO dataset. Example metazoa_odb9.tar.gz.
-	-n  A comma separted list of nodes without spaces to run your jobs on. example sge1027,sge1029,sge1030,sge1031
-	-q  A qsub queue. Example bioinfo.q.
-	-T  Tag or section name within the parameter file to run. Can be 'all' or any tag name in the parameter file. Default: all, run the whole pipeline.
-	-C  Minimum count for filtering out lowly expresed transcripts. default is 3.
-	-R  Minimum number of samples or replicates within a treatment group to use during filtering. default is 2.
+    -b  Tar file name of your choice BUSCO dataset. Example metazoa_odb9.tar.gz.
+    -n  A comma separted list without spaces of qsub nodes to run your jobs on. Example sge1027,sge1029,sge1030,sge1031
+    -q  A qsub queue. Example bioinfo.q
+    -T  Tag or section name within the parameter file to run. Can be 'all' or any tag name in the parameter file. Default: 'all', run the whole pipeline.
+    -C  Minimum count for filtering out lowly expressed transcripts. Default value is 3.
+    -R  Minimum number of samples or replicates within a treatment group to use during filtering. Default value is 2.
 "
 
 ### Terminal Arguments ---------------------------------------------------------
@@ -39,13 +41,13 @@ while getopts ':hp:s:m:t:g:c:b:n:q:T:C:R:' OPTION; do
     m) SAMPLE_MAPPING_FILE=$OPTARG;;
     t) TRANSCRIPT_PREFIX=$OPTARG;;
     g) TREATMENT_NAME=$OPTARG;;
-	c) COMPARISON=$OPTARG;;
-	b) BUSCO_DATABASE=$OPTARG;;
-	n) QSUB_NODES=$OPTARG;;
-	q) QSUB_Q=$OPTARG;;
-	T) TAG=$OPTARG;;
-	C) MINIMUM_COUNT=$OPTARG;;
-	R) MINIMUM_REPLICATES=$OPTARG;;
+    c) COMPARISON=$OPTARG;;
+    b) BUSCO_DATABASE=$OPTARG;;
+    n) QSUB_NODES=$OPTARG;;
+    q) QSUB_Q=$OPTARG;;
+    T) TAG=$OPTARG;;
+    C) MINIMUM_COUNT=$OPTARG;;
+    R) MINIMUM_REPLICATES=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
     \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
   esac
@@ -59,6 +61,7 @@ MISSING="is missing but required. Exiting."
 
 if [ -z ${PARAMETER_FILE+x} ]; then
 echo "NeatSeq_Flow parmeter file not provided, am downloading a template..." 
+rm -rf non_model_RNA_Seq.yaml
 wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/non_model_RNA_Seq.yaml 
 PARAMETER_FILE="non_model_RNA_Seq.yaml"
 fi
@@ -95,9 +98,6 @@ if [ -z ${QSUB_NODES+x} ]; then echo "-n $MISSING, you must provide a comma sepa
 if [ -z ${QSUB_Q+x} ]; then echo "-q $MISSING, you must provide a qsub queue"; echo "$USAGE"; exit 1; fi; 
 
 
-BUSCO_DATABASE=$(echo $BUSCO_DATABASE| sed -e "s/\.tar\.gz//g")
-echo "BUSCO_DATABASE - ${BUSCO_DATABASE}"
-
 DESEQ2=$(echo $CONDA_PREFIX| sed -e "s:envs/non_model_RNA_Seq::g")
 BUSCO_DATABASE=$(echo $BUSCO_DATABASE| sed -e "s/\.tar\.gz//g")
 RNA_DATABASE=$(ls $CONDA_PREFIX/databases/rRNA/*bwt | sed -E 's/\.bwt$//g')
@@ -105,10 +105,9 @@ RNA_DATABASE=$(ls $CONDA_PREFIX/databases/rRNA/*bwt | sed -E 's/\.bwt$//g')
 declare -a TO_REPLACE=(RNA_DATABASE SAMPLE_MAPPING_FILE TRANSCRIPT_PREFIX TREATMENT_NAME COMPARISON CONDA_PATH DESEQ2 BUSCO_DATABASE QSUB_Q QSUB_NODES MINIMUM_COUNT MINIMUM_REPLICATES)
 declare -a REPLACEMENTS=($RNA_DATABASE $SAMPLE_MAPPING_FILE $TRANSCRIPT_PREFIX $TREATMENT_NAME $COMPARISON $CONDA_PREFIX $DESEQ2 $BUSCO_DATABASE $QSUB_Q $QSUB_NODES $MINIMUM_COUNT $MINIMUM_REPLICATES)
 
-# Get length of an array
+# Get the number of replacements
 arraylength=${#TO_REPLACE[@]}
 
-echo "number of elements to replace are ${arraylength}"
 # Set names
 for (( i=0; i<${arraylength}; i++ )); do
  
@@ -116,12 +115,11 @@ declare inFile=$(grep -c "${TO_REPLACE[$i]}" "${PARAMETER_FILE}")
 	
 	if [ $inFile -eq 0 ]; then
      
-     echo " will skip ${TO_REPLACE[$i]} -> ${REPLACEMENTS[$i]}"
  		continue
     
 	else
-    echo " will replace ${TO_REPLACE[$i]} -> ${REPLACEMENTS[$i]}"
-		sed -i -E "s:${TO_REPLACE[$i]}:${REPLACEMENTS[$i]}:g" ${PARAMETER_FILE}
+		
+                sed -i -E "s:${TO_REPLACE[$i]}:${REPLACEMENTS[$i]}:g" ${PARAMETER_FILE}
    
 	fi
 

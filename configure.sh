@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# AUTHOR : Olabiyi Obayomi (obadbotanist@yahoo.com)
+# VERSION : 1.0
+
+
 set -e
 
 USAGE="$(basename "$0") [-h] [ -m value -n value -r URL/path -b value] 
@@ -8,11 +12,11 @@ USAGE="$(basename "$0") [-h] [ -m value -n value -r URL/path -b value]
 --EXAMPLE: bash "$(basename "$0")" -m 1 -n 1 -r database/rRNA_sequences.fasta -b metazoa_odb9.tar.gz 
 where:
     -h  Show this help text.
-	-m  Should Miniconda be installed? If set to 1, Miniconda will be installed otherwise it won't be installed. Default value is 1, it will be installed.
+    -m  Should Miniconda be installed? If set to 1, Miniconda will be installed otherwise it won't be installed. Default value is 1, it will be installed.
     -n  Should Neat_Seq_Flow be installed? If set to 1, NeatSeq_Flow will be installed otherwise it won't be installed. Default value is 1, it will be installed.
     -r  File path to your rRNA sequences. This sequences will be used to build a database that will be used by bwa and samtools to filter out unwanted rRNA sequences.
     -b  Tar file name of your choice BUSCO dataset from the available BUSCO datasets.
-     	Example metazoa_odb9.tar.gz. Please see the pipeline's documentation for other available options.
+     	Example metazoa_odb9.tar.gz. Please see the pipeline's documentation for the available options.
 "
 
 ### Terminal Arguments ---------------------------------------------------------
@@ -21,10 +25,10 @@ where:
 while getopts ':hm:n:r:b:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
-	m) INSTALL_MINICONDA=$OPTARG;;
+    m) INSTALL_MINICONDA=$OPTARG;;
     n) INSTALL_NEATSEQ_FLOW=$OPTARG;;
     r) rRNA_DATABASE=$OPTARG;;
-	b) BUSCO_DATABASE=$OPTARG;;
+    b) BUSCO_DATABASE=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
     \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
   esac
@@ -34,36 +38,38 @@ done
 MISSING="is missing but required. Exiting."
 if [ -z ${INSTALL_MINICONDA+x} ]; then INSTALL_MINICONDA=1; fi; 
 if [ -z ${INSTALL_NEATSEQ_FLOW+x} ]; then INSTALL_NEATSEQ_FLOW=1; fi; 
-if [ -z ${rRNA_DATABASE+x} ]; then echo "-r $MISSING, you must proved a file with ribosomal RNA sequences"; echo "$USAGE"; exit 1; fi; 
-if [ -z ${BUSCO_DATABASE+x} ]; then echo "-b $MISSING, you must proved a BUSCO database"; echo "$USAGE"; exit 1; fi; 
+if [ -z ${rRNA_DATABASE+x} ]; then echo "-r $MISSING, you must provide a file with ribosomal RNA sequences"; echo "$USAGE"; exit 1; fi; 
+if [ -z ${BUSCO_DATABASE+x} ]; then echo "-b $MISSING, you must choose a valid BUSCO database from the available options"; echo "$USAGE"; exit 1; fi; 
 
 DIR=$PWD
-echo "This will take a while to complete, go have some cofee!"
+echo "Configuration will take a day to complete, so go do something else and from time to time view configure.log to monitor the current status."
+
 cd $HOME
 
 # Install Miniconda 
 
 if [ ${INSTALL_MINICONDA} -eq 1 ]; then
-echo "Installing Miniconda"
+echo "Installing Miniconda to your HOME directory ${HOME}"
 wget https://repo.continuum.io/miniconda/Miniconda3-4.7.12.1-Linux-x86_64.sh
-Miniconda3-4.7.12.1-Linux-x86_64.sh
+bash Miniconda3-4.7.12.1-Linux-x86_64.sh -bf
 echo "Miniconda Installation complete !!"
 rm -rf Miniconda3-4.7.12.1-Linux-x86_64.sh
 fi
+
 
 # Install Neatseq_flow env 
 if [ ${INSTALL_NEATSEQ_FLOW} -eq 1 ]; then
 echo "Installing Neatseq Flow"
 curl -LO https://raw.githubusercontent.com/bioinfo-core-BGU/NeatSeq-Flow-GUI/master/NeatSeq_Flow_GUI_installer.yaml
 conda env create -f NeatSeq_Flow_GUI_installer.yaml
-echo "Neatseq Flow Installation completed successfully !!"
+echo "Neatseq Flow Installation completed successfully!!"
 rm -rf NeatSeq_Flow_GUI_installer.yaml
 fi
 
 echo "Creating DeSeq2 conda environment"
 # Create DeSeq2 environment
 wget https://raw.githubusercontent.com/bioinfo-core-BGU/NeatSeq-Flow_Workflows/master/DeSeq_Workflow/DeSeq2_module/DeSeq2_env_install.yaml
-#Correct the version problem with biconductor-sva
+# Correct the version problem with biconductor-sva
 sed -i "s/bioconductor-sva=3.8/bioconductor-sva/g" DeSeq2_env_install.yaml
 conda env create -f DeSeq2_env_install.yaml
 echo "DeSeq2 conda environment created successfully !!"
@@ -162,7 +168,7 @@ cd rRNA/
 # Download from internet or copy sequences from file path
 echo "Building ribosomal RNA database"
 DATABASE_NAME=$(basename ${rRNA_DATABASE} | sed -E 's/\..+$//g')
-bwa index -p ${DATABASE_NAME}  -a bwtsw ${rRNA_DATABASE} || echo "You have not provided valid sequences for the construction of your rRNA database. Make sure you prepare and copy it to  $CONDA_PREFIX/databases/rRNA/"
+bwa index -p ${DATABASE_NAME}  -a bwtsw ${rRNA_DATABASE} #|| echo "You have not provided valid sequences for the construction of your rRNA database. Make sure you prepare and copy it to  $CONDA_PREFIX/databases/rRNA/"
 echo "Done building ribosomal RNA database"
 cd ..
 
@@ -175,9 +181,12 @@ tar -xvzf ${BUSCO_DATABASE}
 rm -rf ${BUSCO_DATABASE}
 echo "Done building BUSCO database"
 cd ..
+
+cd $DIR 
 # Download the non_model_RNA_Seq.yaml parameter file
 wget  https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/non_model_RNA_Seq.yaml
-cd $DIR 
-echo "Done! Your environment was configured successfully" 
-echo "Path to to your non_model_RNA_Seq conda environment is : $CONDA_PREFIX"
+
+echo "Done! Your environment was configured successfully." 
+echo "The path to to your non_model_RNA_Seq conda environment is : $CONDA_PREFIX"
+echo "Your template parameter file is non_model_RNA_Seq.yaml. You can edit it as you please but do not change any capitalized text in the file."
 source deactivate 
