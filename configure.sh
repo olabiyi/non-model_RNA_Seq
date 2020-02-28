@@ -85,7 +85,7 @@ echo "Setting-up rnammer with hmm"
 wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/rnammer.tar.gz
 tar -xvzf rnammer.tar.gz
 sed -i "s:/usr/cbs/bio/src/rnammer-1.2:$CONDA_PREFIX/opt/RNAMMERv1.2/:g" RNAMMERv1.2/rnammer
-sed -i -E "s:/usr/cbs/bio/bin/.+/:$CONDA_PREFIX/opt/hmmer-2.3.2/:g" RNAMMERv1.2/rnammer
+sed -i -E "s:/usr/cbs/bio/bin/.+/:$CONDA_PREFIX/opt/hmmer-2.3.2/bin/:g" RNAMMERv1.2/rnammer
 sed -i  -E "s:/usr/s?bin:$CONDA_PREFIX/bin:g" RNAMMERv1.2/rnammer
 
 # Download hmmer v2.3.2 required by rnammer
@@ -110,6 +110,7 @@ wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/get_grou
 chmod +x  get_group_contrast.R
 # Download modified RnammerTranscriptome_mod.pl that handles for empty predictions
 wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/RnammerTranscriptome_mod.pl
+chmod +x RnammerTranscriptome_mod.pl
 # Download job limit file
 wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/job_limit.txt
 
@@ -143,15 +144,15 @@ cd ..
 [ -d Refseq ] || mkdir Refseq/
 cd Refseq/
 echo "Downloading Refseq protein sequences"
-wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/complete/*fna*
+wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/complete/*faa.gz
 echo "Unzipping the sequences"
 gunzip *.gz
-echo "Concatenating the sequences to refseq_protein.fna"
-cat *.fna > refseq_protein.fna
+echo "Concatenating the sequences to refseq_protein.faa"
+cat *.faa > refseq_protein.faa
 echo "Making refseq_protein database"
-makeblastdb -in refseq_protein.fna -out refseq_protein -dbtype prot
+makeblastdb -in refseq_protein.faa -out refseq_protein -dbtype prot
 echo "Cleaning up"
-rm -rf *fna
+rm -rf *faa
 echo "Done building refseq_protein database"
 cd ..
 

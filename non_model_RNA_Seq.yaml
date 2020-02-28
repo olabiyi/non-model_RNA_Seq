@@ -40,7 +40,7 @@ Vars:
 # --------- General
         java:                CONDA_PATH/bin/
         perl_lib_in_conda:           CONDA_PATH/lib/5.26.2/
-        PERL_DIR:    CONDA_PATH/bin/
+        PERL_DIR:    CONDA_PATH/lib/site_perl/5.26.2/
         
 # -------- Import reads
         import_seqs:          gzip -cd  
@@ -598,7 +598,7 @@ Step_params:
         script_path:        {Vars.paths.TransDecoder}
         tag:                03.Annotation
         scope:              sample
-        setenv:             'PATH="{Vars.paths.PERL_DIR}/bin:$PATH" PERL5LIB="{Vars.paths.PERL_DIR}/lib"'
+        setenv:             'PATH="{Vars.paths.PERL_DIR}/bin:$PATH" PERL5LIB="{Vars.paths.PERL_DIR}"'
 
     Swiss_prot_blastp:
         module:             blast
@@ -663,7 +663,11 @@ Step_params:
         scope:              project
         sqlitedb:           {Vars.databases.trinotate.sqlitedb}
         cp_sqlitedb:               
+        conda:
+            path: null
+            env: non_model_RNA_Seq    
 
+ 
 # ----------------------- 5. Staistical analysis using DESeq2
 # For a complete tutorial on the DESeq2 module please see  https://github.com/bioinfo-core-BGU/NeatSeq-Flow_Workflows/blob/master/DeSeq_Workflow/Tutorial.md
     Statistical_analysis:

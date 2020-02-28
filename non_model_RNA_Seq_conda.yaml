@@ -27,6 +27,7 @@ dependencies:
   - perl=5.26.2
   - perl-dbd-sqlite
   - perl-dbi
+  - perl-xml-simple
 
 # Software
   - curl
