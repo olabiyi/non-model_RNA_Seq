@@ -123,6 +123,7 @@ Step_params:
         module:         Import
         script_path:    {Vars.paths.import_seqs}
         tag:    00.Quality_check
+        #SKIP Import_reads:
 
     QC_imported_reads:
         module:         fastqc_html
@@ -134,6 +135,8 @@ Step_params:
             -pe:        shared 15
         redirects:
             --threads:  15
+        #SKIP QC_imported_reads:
+
     Trim_imported_reads: 
         module:         Trim_Galore
         base:           Import_reads
@@ -146,6 +149,8 @@ Step_params:
             --quality:  20 
             --max_n:    1
             --trim-n:
+        #SKIP Trim_imported_reads:
+
     QC_trimmed_reads:
         module:         fastqc_html
         base:           Trim_imported_reads
@@ -156,6 +161,8 @@ Step_params:
             -pe:        shared 15
         redirects:
             --threads:  15
+        #SKIP QC_trimmed_reads:
+
     SummarizeQC_imported_reads:
         module:         Multiqc
         base:           QC_imported_reads
@@ -163,6 +170,8 @@ Step_params:
         tag:            00.Quality_check
         redirects:
             --interactive:
+        #SKIP SummarizeQC_imported_reads:
+
     SummarizeQC_trimmed_reads:
         module:         Multiqc
         base:           QC_trimmed_reads
@@ -170,6 +179,7 @@ Step_params:
         tag:            00.Quality_check
         redirects:
             --interactive:
+        #SKIP SummarizeQC_trimmed_reads:
 
 # Mapping to rRNA sequences of target organism or organism group:
     Map_reads_to_rRNA:
@@ -184,6 +194,8 @@ Step_params:
         ref_index:      {Vars.databases.rRNA.bwa_ind}
         redirects:
             -t:         10                
+        #SKIP Map_reads_to_rRNA:
+
     Filter_unmapped_reads:
         module:         samtools
         base:           Map_reads_to_rRNA
@@ -198,6 +210,8 @@ Step_params:
         stats:          --remove-dups
         idxstats:
         fastq:          -f 12 -t
+        #SKIP Filter_unmapped_reads:
+
     QC_unmapped_reads:
         module:         fastqc_html
         base:           Filter_unmapped_reads
@@ -208,6 +222,7 @@ Step_params:
             -pe:        shared 15
         redirects:
             --threads:  15
+        #SKIP QC_unmapped_reads:
         
     SummarizeQC_unmapped_reads_and_alignment:
         module:         Multiqc
@@ -219,6 +234,7 @@ Step_params:
         tag:    00.Quality_check
         redirects:
             --interactive:
+        #SKIP SummarizeQC_unmapped_reads_and_alignment:
 
 # ------------------------- 2. De novo assembly with Trinity, producing the "full transcriptome"
     Add_trinity_tags:
@@ -226,6 +242,8 @@ Step_params:
         base:               Filter_unmapped_reads
         script_path: 
         tag:                01.Assembly
+        #SKIP Add_trinity_tags:
+
     Assemble_Transcriptome:
         module:             trinity
         base:               Add_trinity_tags
@@ -242,6 +260,7 @@ Step_params:
             --seqType:          fq
             --min_kmer_cov:     2
             --full_cleanup:
+        #SKIP Assemble_Transcriptome:
 
 # Rename transcripts by adding "Transcript_prefix" as a prefix to the original transcript name
     Rename_Transcripts:                      
@@ -263,13 +282,16 @@ Step_params:
         redirects:                  
             -p:     '"(.+)"'
             -r:     '"{Vars.Transcript_prefix}\$1"'
-            
+        #SKIP Rename_Transcripts:            
+
+
     Generate_Gene_Transcript_Map:
         module:             Trinity_gene_to_trans_map
         base:               Rename_Transcripts
         script_path:        {Vars.paths.get_Trinity_gene_to_trans_map}
         tag:                01.Assembly
         scope:              project
+        #SKIP Generate_Gene_Transcript_Map:
 
 ### Quality assessment of the full transcriptome
 
@@ -283,6 +305,7 @@ Step_params:
             -pe:            shared 10
         redirects:
             -t:             10
+        #SKIP quastQC_full_transcriptome:
 
     BuscoQC_full_transcriptome:
         module:             BUSCO
@@ -301,6 +324,8 @@ Step_params:
         conda:
             path: null
             env: non_model_RNA_Seq    
+        #SKIP BuscoQC_full_transcriptome:
+
 
 # --------------------------- 3. Filtering out low expressed transcripts
 ### Map reads to full transcriptome, and build an expression matrix
@@ -321,6 +346,7 @@ Step_params:
             --gene_trans_map:
             --seqType:      fq
             --thread_count: 20
+        #SKIP Map_reads_to_full_transcriptome:
 
     Generate_count_matrix:
         module: trinity_statistics
@@ -339,6 +365,7 @@ Step_params:
         setenv: 
         - 'PERL5LIB=""'
         - 'R_LIBS=""'
+        #SKIP Generate_count_matrix:
 
 ## Filtering out lowly expressed transcripts:
 ## retain transcripts with at least x reads in at least n replicates in at least one of the treatment groups
@@ -371,7 +398,7 @@ Step_params:
             --min_count:    {Vars.min_count}
             --min_sample:   {Vars.min_sample}
             --min_groups:   1 
-
+        #SKIP Filter_low_expressed_transcripts:
 
 ### QA of the filtered transcriptome
 
@@ -385,6 +412,7 @@ Step_params:
             -pe:            shared 20
         redirects:
             -t:             20
+        #SKIP quastQC_filtered_transcripts:
 
     BuscoQC_filtered_transcripts:
         module: BUSCO
@@ -403,6 +431,7 @@ Step_params:
         conda:
             path: null
             env: non_model_RNA_Seq
+        #SKIP BuscoQC_filtered_transcripts:
             
 ## Make a blast database from the filtered transcriptome
 
@@ -414,6 +443,7 @@ Step_params:
         redirects:
             -dbtype: nucl
         scope: project
+        #SKIP Make_filtered_transcripts_BLAST_db:
 
 ## Select a representative transcript per gene from the filtered transcriptome (for annotation)
     Generate_filtered_Gene_Transcript_Map:
@@ -422,6 +452,7 @@ Step_params:
         script_path:        {Vars.paths.get_Trinity_gene_to_trans_map}
         tag:                02.Filtering
         scope:              project
+        #SKIP Generate_filtered_Gene_Transcript_Map:
 
     Map_reads_to_filtered_transcriptome:
         module: trinity_mapping
@@ -440,7 +471,7 @@ Step_params:
             --trinity_mode: null
             --seqType: fq
             --thread_count: '20'
-
+        #SKIP Map_reads_to_filtered_transcriptome:
 
     Generate_filtered_count_matrix:
         module: trinity_statistics
@@ -459,6 +490,8 @@ Step_params:
         setenv: 
         - 'PERL5LIB=""'
         - 'R_LIBS=""'
+        #SKIP Generate_filtered_count_matrix:
+
 
 # Filter representative transcripts
     Select_representative_transcripts:
@@ -485,6 +518,7 @@ Step_params:
                 suffix:      .representative.fasta       # A suffix for this output argument file name    
         redirects:
             --highest_iso_only:
+        #SKIP Select_representative_transcripts:
 
 ### Quality assessment of Representative transcripts
 
@@ -498,6 +532,8 @@ Step_params:
             -pe:            shared 20
         redirects:
             -t:             20
+        #SKIP quastQC_representative_transcripts:
+
     BuscoQC_representative_transcripts:
         module:             BUSCO
         base:               Select_representative_transcripts
@@ -515,6 +551,8 @@ Step_params:
         conda:
             path: null
             env: non_model_RNA_Seq    
+        #SKIP BuscoQC_representative_transcripts:
+
 
 # -------------------------- 4. Annotate representative transcript per gene
 
@@ -530,7 +568,7 @@ Step_params:
         redirects:
             --n-parts:      1000
             --measure:      seq
-        
+        #SKIP Split_representative_fasta:        
         
 # 2. BLAST vs. RefSeq:
     Refseq_protein_blastx:
@@ -551,6 +589,7 @@ Step_params:
             -num_alignments: 20 
             -max_hsps:      20 
             -num_threads:   10
+        #SKIP Refseq_protein_blastx:
         
 # 3. Merging blast reports with BlastXMLmerge.py for function annotation using Blast2GO
     Merge_refseq_blastx_xmls:                   
@@ -569,6 +608,7 @@ Step_params:
             empty2:
                 File_Type:   blast.nucl
                 suffix:      .xml       # A suffix for this output argument file name
+        #SKIP Merge_refseq_blastx_xmls:
 
 # ----------------------------------------------------------------
 # 4. Trinotate pipeline:
@@ -578,6 +618,7 @@ Step_params:
         script_path:        {Vars.paths.get_Trinity_gene_to_trans_map}
         tag:                03.Annotation
         scope:              sample
+        #SKIP Generate_rep_Gene_Transcript_Map:
 
     Swiss_prot_blastx:
         module:             blast
@@ -591,6 +632,7 @@ Step_params:
             -max_target_seqs: 1
             -num_threads:   1
             -outfmt:        6
+        #SKIP Swiss_prot_blastx:
 
     Identify_coding_region:
         module:             TransDecoder
@@ -599,6 +641,7 @@ Step_params:
         tag:                03.Annotation
         scope:              sample
         setenv:             'PATH="{Vars.paths.PERL_DIR}/bin:$PATH" PERL5LIB="{Vars.paths.PERL_DIR}"'
+        #SKIP Identify_coding_region:
 
     Swiss_prot_blastp:
         module:             blast
@@ -612,6 +655,7 @@ Step_params:
             -max_target_seqs: 1
             -num_threads:   1
             -outfmt:        6
+        #SKIP Swiss_prot_blastp:
 
     Identify_protein_domain:
         module:             hmmscan
@@ -624,7 +668,7 @@ Step_params:
         hmmdb:              {Vars.databases.trinotate.pfam}
         redirects:
             --cpu:          1
-            
+        #SKIP Identify_protein_domain:            
             
     Predict_rRNA:
         module:             RnammerTranscriptome
@@ -638,6 +682,7 @@ Step_params:
             path: null
             env: non_model_RNA_Seq    
         setenv: 'PERL5LIB=""'
+        #SKIP Predict_rRNA:
    
     Merge_blast_results:
         module:             merge_table
@@ -645,6 +690,8 @@ Step_params:
         script_path:        
         tag:                03.Annotation
         type:               [blast.prot,blast.nucl,gene_trans_map,transcripts.fasta.nucl,fasta.prot,rnammer]
+        #SKIP Merge_blast_results:
+
     Merge_protein_domain_results:
         module:             merge_table
         base:               Identify_protein_domain
@@ -652,6 +699,8 @@ Step_params:
         tag:                03.Annotation
         type:               hmmscan.prot
         header:             3
+        #SKIP Merge_protein_domain_results:
+
 #-- make sure you have perl DBI module installed in your conda environment - conda install -c bioconda perl-dbd-sqlite perl-dbi
     Generate_annotation_table:
         module:             Trinotate
@@ -666,7 +715,7 @@ Step_params:
         conda:
             path: null
             env: non_model_RNA_Seq    
-
+        #SKIP Generate_annotation_table:
  
 # ----------------------- 5. Staistical analysis using DESeq2
 # For a complete tutorial on the DESeq2 module please see  https://github.com/bioinfo-core-BGU/NeatSeq-Flow_Workflows/blob/master/DeSeq_Workflow/Tutorial.md
@@ -701,4 +750,4 @@ Step_params:
             --PCA_SHAPE: "{Vars.Treatment_name}"
             --Enriched_terms_overlap:  TRUE
             --USE_INPUT_GENES_AS_BACKGROUND: FALSE
-
+        #SKIP Statistical_analysis:
