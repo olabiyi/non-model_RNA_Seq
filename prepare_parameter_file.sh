@@ -17,7 +17,6 @@ where:
     -h  Show this help text.
     -p  Neatseq_flow parameter file to modify and run. It must be correctly formated as the default file.
           Default: downloaded from the internet.
-    -s  Neatseq_flow sample file.
     -S  A comma separated list without spaces of step names in the parameter file to skip.
           Example Map_reads_to_rRNA,Assemble_Transcriptome,Generate_Gene_Transcript_Map
     -r  Should your genes be BLASTed against NCBI's Refseq protein database? Set it to any value and it will be BLASTed.
@@ -44,7 +43,6 @@ while getopts ':hp:s:S:r:m:t:g:c:b:n:q:T:C:R:' OPTION; do
   case $OPTION in
     h) echo; echo "$USAGE"; exit 1;;
     p) PARAMETER_FILE=$OPTARG;;
-    s) SAMPLE_FILE=$OPTARG;;
     S) SKIP_STEPS=$OPTARG;;
     r) REFSEQ=$OPTARG;;
     m) SAMPLE_MAPPING_FILE=$OPTARG;;
@@ -74,9 +72,6 @@ wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/non_mode
 PARAMETER_FILE="non_model_RNA_Seq.yaml"
 fi
 echo; echo "Your Parameter file is ${PARAMETER_FILE}."
-
-if [ -z ${SAMPLE_FILE+x} ]; then echo "-s $MISSING"; echo "$USAGE"; exit 1; fi; 
-echo; echo "Your Sample file is  ${SAMPLE_FILE}."
 
 
 # Ensure that no step has aleady been skipped in the parmeter file, if so, unskip them
