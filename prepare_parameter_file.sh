@@ -74,6 +74,10 @@ fi
 echo; echo "Your Parameter file is ${PARAMETER_FILE}."
 
 
+# Set default import method to gzip -cd
+sed -i -E "s/^(\s+import_seqs:\s+).+$/\1gzip -cd/g"  ${PARAMETER_FILE}
+
+
 # Ensure that no step has aleady been skipped in the parmeter file, if so, unskip them
 # find the lines that this script had previously tagged for skipping in a previous run
 echo "am here"
@@ -168,8 +172,17 @@ if [ ${SKIP_STEPS} != "skip_nothing" ];then
 
         else
 
-               sed -i -E "s/^(\s+)#SKIP ${STEP}(\s+)?:/\1SKIP:    #SKIP ${STEP}/g"  ${PARAMETER_FILE}    
-    
+              if [ "${STEP}" == "Import_reads" ]; then
+
+                 sed -i -E "s/^(\s+import_seqs:\s+)gzip\s-cd/\1..import../g"  ${PARAMETER_FILE}
+
+              else
+
+                  sed -i -E "s/^(\s+)#SKIP ${STEP}(\s+)?:/\1SKIP:    #SKIP ${STEP}/g"  ${PARAMETER_FILE}
+
+              fi
+
+ 
         fi
 
     done

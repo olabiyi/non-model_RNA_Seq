@@ -7,7 +7,7 @@ Global_params:
     job_limit:          CONDA_PATH/bin/job_limit.txt
 
 #------Documentation
-Description: |
+"Documentation": | 4-
     A pipeline for non-model organisms RNA-seq analysis
     ---------------------------------------------------
     
@@ -271,7 +271,7 @@ Step_params:
         shell:                      bash
         scope:                      project              
         inputs:                    
-            "":
+            " ":
                 scope:              project
                 File_Type:          fasta.nucl
         outputs:                    

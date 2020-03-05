@@ -41,8 +41,9 @@ if [ -z ${PARAMETER_FILE+x} ]; then
     echo "-p $MISSING"
     echo; echo "Please supply the parameter file that has been edited by the script 'prepare_parameter_file.sh'."
     echo "Exiting...."
-    exit 1"
+    exit 1
 fi
+
 echo; echo "Your Parameter file is ${PARAMETER_FILE}."
 
 if [ -z ${SAMPLE_FILE+x} ]; then echo "-s $MISSING"; echo;echo "$USAGE"; exit 1; fi;
@@ -82,5 +83,5 @@ fi
 if [ "${TAG}" == "all" ]; then
     bash scripts/00.workflow.commands.sh  1> null &
 else
-    bash scripts/tags_scripts/${TAG}.sh 1> null & || echo "The tag - $TAG you provided does not exist, please provide a valid tag and run again"; exit 1;
+    bash scripts/tags_scripts/${TAG}.sh 1> null & #|| echo "The tag - $TAG you provided does not exist, please provide a valid tag and run again"; exit 1;
 fi

@@ -351,7 +351,7 @@ Tutorial
             # Edit the parameter file "non_model_RNA_Seq.yaml" via the GUI
             NeatSeq_Flow_GUI.py
 
-#. Monitor your work
+#. Monitor your work and view the output of each step in the ``data/`` directory. In this directory, results are arranged in separate folders according to the neatseq flow module used to run the step. So to find the assembly from the the Assemble_Transcriptome step for example, navigate to ``data/trinity/Assemble_Transcriptome/``. To know the module used for a particular step, please see the table *A summary of steps in the pipeline* above.
 
    .. code-block:: bash
 
