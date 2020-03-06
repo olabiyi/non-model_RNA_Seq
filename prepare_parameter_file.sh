@@ -5,14 +5,15 @@
 
 set -e
 
-USAGE="$(basename "$0") [-h] [-p file] [ -s file -p file -S comma separated list -r value
-                        -m file -t value -g value -c value -b value -n comma separated list -q value -R value -C value ] 
+USAGE="$(basename "$0") [-h] [-p file] [ -p file -S comma separated list -r value -C comma separated list
+                        -m file -t value -g value -c value -b value -n comma separated list -q value -R value -M value ] 
 -- $(basename "$0"): prepares the parameter file for NeatSeq_Flow.
 
---EXAMPLE: "$(basename "$0")" -s sample_file.nsfs -p non_model_RNA_Seq.yaml -m sample_grouping.txt 
+--EXAMPLE: "$(basename "$0")"  -p non_model_RNA_Seq.yaml -m sample_grouping.txt 
                               -t CUTICULA  -b metazoa_odb9.tar.gz  -q bioinfo.q 
 			      -g Treatment -c Treatment,level1,level2|Treatment,level1,level3|Treatment,level2,level3
-			      -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22 -R 2 -C 3
+			      -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22 -R 2 -M 3
+                              -C Import_reads,99.reanalyze,QC_imported_reads,99.reanalyze
 where:
     -h  Show this help text.
     -p  Neatseq_flow parameter file to modify and run. It must be correctly formated as the default file.
@@ -29,8 +30,9 @@ where:
     -b  Basename of tar file name of your choice BUSCO dataset. Example metazoa_odb9.tar.gz.
     -n  A comma separated list without spaces of qsub nodes to run your jobs on. Example sge1027,sge1029,sge1030,sge1031
     -q  A qsub queue. Example bioinfo.q
-    -C  Minimum count for filtering out lowly expressed transcripts. Default value is 3.
+    -M  Minimum count for filtering out lowly expressed transcripts. Default value is 3.
     -R  Minimum number of samples or replicates within a treatment group to use during filtering. Default value is 2.
+    -C  Change tag name. Comma separated list of step name folowed by new tag name. For example: Import_reads,99.reanalyze,QC_imported_reads,99.reanalyze.
 "
 
 # Print usage if no arguement is passed to the script
@@ -39,7 +41,7 @@ if [ $# -eq 0 ]; then  echo; echo "$USAGE"; exit 1; fi
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hp:s:S:r:m:t:g:c:b:n:q:T:C:R:' OPTION; do
+while getopts ':hp:s:S:r:m:t:g:c:b:n:q:T:M:R:C:' OPTION; do
   case $OPTION in
     h) echo; echo "$USAGE"; exit 1;;
     p) PARAMETER_FILE=$OPTARG;;
@@ -52,8 +54,9 @@ while getopts ':hp:s:S:r:m:t:g:c:b:n:q:T:C:R:' OPTION; do
     b) BUSCO_DATABASE=$OPTARG;;
     n) QSUB_NODES=$OPTARG;;
     q) QSUB_Q=$OPTARG;;
-    C) MINIMUM_COUNT=$OPTARG;;
+    M) MINIMUM_COUNT=$OPTARG;;
     R) MINIMUM_REPLICATES=$OPTARG;;
+    C) STEPS2CHANGE=$OPTARG;;
     :) printf "missing argument for -$OPTARG\n" >&2; exit 1;;
     \?) printf "invalid option for -$OPTARG\n" >&2; exit 1;;
   esac
@@ -76,6 +79,57 @@ echo; echo "Your Parameter file is ${PARAMETER_FILE}."
 
 # Set default import method to gzip -cd
 sed -i -E "s/^(\s+import_seqs:\s+).+$/\1gzip -cd/g"  ${PARAMETER_FILE}
+
+
+CHANGE_TAG=true
+if [ -z ${STEPS2CHANGE} ]; then CHANGE_TAG=false; fi;
+
+if [ $CHANGE_TAG == true ];then
+
+    # Rename tag
+    STEPS2CHANGE=$(echo ${STEPS2CHANGE[*]} |sed -E 's/,(\s+)?/ /g') && STEPS2CHANGE=($STEPS2CHANGE)
+
+    NUMBER_OF_STEPS=$(( ${#STEPS2CHANGE[*]}/2 ))
+
+
+    # Ensure that the steps to change are provided with a new tag name i.e contains step name and the new tag for that step
+    if [ $(( ${#STEPS2CHANGE[*]}%2 )) -ne 0 ]; then
+
+        echo "The step(s) and the new tag name(s) you provided : ${#STEPS2CHANGE[*]}  are not complete. Exiting...."
+        exit 1
+
+    else
+        declare i=0
+        # Rename tag
+        for count in $(seq 1 ${NUMBER_OF_STEPS});do
+
+            declare STEP_NAME=${STEPS2CHANGE[$i]}
+            declare NEW_TAG_NAME=${STEPS2CHANGE[$i+1]}
+            declare inFile=$(grep -c "${STEP_NAME}" "${PARAMETER_FILE}")
+           # echo "STEP name is : ${STEP_NAME} -> new tag name is: ${NEW_TAG_NAME}"
+            if [ $inFile -eq 0 ]; then
+
+                echo
+                echo "${STEP_NAME} does not exist in ${PARAMETER_FILE}, hence i won't be renaming its tag."
+                continue
+
+            else
+                 #echo "STEP name is : ${STEP_NAME} -> new tag name is: ${NEW_TAG_NAME}"
+                 # Rename tag
+                sed -i -E "s/^(\s+tag:\s+).+(\s#${STEP_NAME})/\1${NEW_TAG_NAME}\2/g" ${PARAMETER_FILE}
+
+            fi
+
+           let i+=2
+
+        done
+
+    fi
+
+fi
+
+
+
 
 
 # Ensure that no step has aleady been skipped in the parmeter file, if so, unskip them
