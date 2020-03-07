@@ -5,11 +5,10 @@
 
 set -e
 
-USAGE="$(basename "$0") [-h -T value] 
+USAGE="$(basename "$0") [-h -T value -p file] [-s file -m file] 
 -- $(basename "$0"): Runs the non-model organisms RNA Seq pipeline on the NeatSeq_Flow platform
 
---EXAMPLE: "$(basename "$0")" -T 00.Quality_check 
-           "$(basename "$0")"
+--EXAMPLE: "$(basename "$0")" -s sample_data.nsfs  -m sample_grouping.txt  -p non_model_RNA_Seq.yaml -T 00.Quality_check  
 where:
     -h  Show this help text.
     -p  Neatseq_flow parameter file that has been modified by the script 'prepare_parameter_file.sh'.
@@ -38,10 +37,12 @@ while getopts ':hp:s:m:T:' OPTION; do
 done
 
 if [ -z ${PARAMETER_FILE+x} ]; then
+
     echo "-p $MISSING"
     echo; echo "Please supply the parameter file that has been edited by the script 'prepare_parameter_file.sh'."
     echo "Exiting...."
     exit 1
+
 fi
 
 echo; echo "Your Parameter file is ${PARAMETER_FILE}."
@@ -50,20 +51,43 @@ if [ -z ${SAMPLE_FILE+x} ]; then echo "-s $MISSING"; echo;echo "$USAGE"; exit 1;
 echo; echo "Your Sample file is  ${SAMPLE_FILE}."
 
 if [ -z ${SAMPLE_MAPPING_FILE+x} ]; then 
+
     echo "-m $MISSING"
     echo "You must supply a mapping or grouping file"
     echo "$USAGE"
     exit 1
+
 fi
 echo; echo "Your mapping file is  ${SAMPLE_MAPPING_FILE}."
 
  
 if [ -z ${TAG+x} ]; then TAG="all"; fi; 
+
+# Check if tag in parameter file
+
+declare inFile=$(grep -Ec "^\s+tag:\s+${TAG}" "${PARAMETER_FILE}")
+
+if [[ $TAG != "all" && ${inFile} -eq 0 ]]; then
+
+    echo;echo "The tag - ${TAG} you provided does not exist in ${PARAMETER_FILE}."
+    echo;echo "please provide a valid tag and run again. Exiting ...";
+    exit 1
+
+fi
+
 echo; echo "I will run  ${TAG} section(s) of ${PARAMETER_FILE}."
 
 
 # Activate Netaseq_flow and run
-source activate NeatSeq_Flow
+source activate NeatSeq_Flow 
+
+if [ $? -ne 0 ]; then
+
+    echo;echo "You have not installed NeatSeq_Flow."
+    echo;echo " Please run configure.sh before running this script $(basename "$0")"
+    exit 1
+
+fi
 export CONDA_BASE=$(conda info --root)
 
 if [ -d logs/ ]; then
@@ -80,8 +104,13 @@ else
 
 fi
 
+# Run Tag
 if [ "${TAG}" == "all" ]; then
+
     bash scripts/00.workflow.commands.sh  1> null &
+
 else
-    bash scripts/tags_scripts/${TAG}.sh 1> null & #|| echo "The tag - $TAG you provided does not exist, please provide a valid tag and run again"; exit 1;
+
+    bash scripts/tags_scripts/${TAG}.sh 1> null &
+
 fi

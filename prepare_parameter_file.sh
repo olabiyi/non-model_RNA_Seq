@@ -7,7 +7,7 @@ set -e
 
 USAGE="$(basename "$0") [-h] [-p file] [ -p file -S comma separated list -r value -C comma separated list
                         -m file -t value -g value -c value -b value -n comma separated list -q value -R value -M value ] 
--- $(basename "$0"): prepares the parameter file for NeatSeq_Flow.
+-- $(basename "$0"): prepares your parameter file for NeatSeq_Flow.
 
 --EXAMPLE: "$(basename "$0")"  -p non_model_RNA_Seq.yaml -m sample_grouping.txt 
                               -t CUTICULA  -b metazoa_odb9.tar.gz  -q bioinfo.q 
@@ -32,7 +32,7 @@ where:
     -q  A qsub queue. Example bioinfo.q
     -M  Minimum count for filtering out lowly expressed transcripts. Default value is 3.
     -R  Minimum number of samples or replicates within a treatment group to use during filtering. Default value is 2.
-    -C  Change tag name. Comma separated list of step name folowed by new tag name. For example: Import_reads,99.reanalyze,QC_imported_reads,99.reanalyze.
+    -C  Change tag name. Comma separated list of pairs of step name folowed by new tag name. For example: Import_reads,99.reanalyze,QC_imported_reads,99.reanalyze.
 "
 
 # Print usage if no arguement is passed to the script
@@ -41,7 +41,7 @@ if [ $# -eq 0 ]; then  echo; echo "$USAGE"; exit 1; fi
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hp:s:S:r:m:t:g:c:b:n:q:T:M:R:C:' OPTION; do
+while getopts ':hp:s:S:r:m:t:g:c:b:n:q:M:R:C:' OPTION; do
   case $OPTION in
     h) echo; echo "$USAGE"; exit 1;;
     p) PARAMETER_FILE=$OPTARG;;
@@ -63,16 +63,25 @@ while getopts ':hp:s:S:r:m:t:g:c:b:n:q:T:M:R:C:' OPTION; do
 done
 
 # Activate the non_model_RNA_Seq conda environment
-source activate non_model_RNA_Seq
+source activate non_model_RNA_Seq 
+if [ $? -ne 0 ]; then 
+
+    echo;echo "The non_model_RNA_Seq conda evironment has not been configured."
+    echo;echo "Please run configure.sh before running this script $(basename "$0")"
+    exit 1
+
+fi
 
 # Check missing arguments
 MISSING="is missing but required. Exiting."
 
 if [ -z ${PARAMETER_FILE+x} ]; then
-echo; echo "NeatSeq_Flow parmeter file not provided, am downloading a template..." 
-rm -rf non_model_RNA_Seq.yaml
-wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/non_model_RNA_Seq.yaml 
-PARAMETER_FILE="non_model_RNA_Seq.yaml"
+
+    echo; echo "NeatSeq_Flow parmeter file not provided, am downloading a template..." 
+    rm -rf non_model_RNA_Seq.yaml
+    wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/non_model_RNA_Seq.yaml 
+    PARAMETER_FILE="non_model_RNA_Seq.yaml"
+
 fi
 echo; echo "Your Parameter file is ${PARAMETER_FILE}."
 
@@ -110,8 +119,9 @@ if [ $CHANGE_TAG == true ];then
             if [ $inFile -eq 0 ]; then
 
                 echo
-                echo "${STEP_NAME} does not exist in ${PARAMETER_FILE}, hence i won't be renaming its tag."
-                continue
+                echo "${STEP_NAME} does not exist in ${PARAMETER_FILE}, hence i can't rename its tag."
+                echo "Please provide only valid step names then try again. Exiting..."
+                exit 1
 
             else
                  #echo "STEP name is : ${STEP_NAME} -> new tag name is: ${NEW_TAG_NAME}"
@@ -129,23 +139,18 @@ if [ $CHANGE_TAG == true ];then
 fi
 
 
-
-
-
 # Ensure that no step has aleady been skipped in the parmeter file, if so, unskip them
 # find the lines that this script had previously tagged for skipping in a previous run
-echo "am here"
 declare inFile=$(grep -Ec "^\s+SKIP:\s+(#SKIP.+)" "${PARAMETER_FILE}")
 
 #echo "am here"
 # Unskip previously skipped steps
 if [[ ${inFile} -gt 0 ]]; then
-#    echo "am here"
+
     sed -i -E "s/^(\s+)SKIP:\s+(#SKIP\s\S+)/\1\2:/g"  ${PARAMETER_FILE}
     echo; echo "Unskipped any previously skipped step in ${PARAMETER_FILE} before applying yours."
-fi
 
-#echo "am here"
+fi
 
 # Check if ordinary SKIP tags have been used then exit with message 
 BAD_LINES=$(grep -nE "^\s+SKIP(\s+)?:(\s+)?$" "${PARAMETER_FILE}" | cut -d " " -f1 | sed 's/://g')
@@ -161,14 +166,18 @@ echo
 exit 1
 fi 
 
-#echo "am here"
 declare -a REFSEQ_STEPS=(Refseq_protein_blastx Merge_refseq_blastx_xmls)
 
 if [ -z ${REFSEQ+x} ]; then 
+
     for STEP in ${REFSEQ_STEPS[*]};do 
+
         sed -i -E "s/^(\s+)#SKIP ${STEP}(\s+)?:/\1SKIP:\1#SKIP ${STEP}/g" ${PARAMETER_FILE}
+
     done
+
     echo; echo "I will not blast your genes against Refseq protein database."
+
 fi
 
 if [ -z ${SAMPLE_MAPPING_FILE+x} ]; then echo "-m $MISSING"; echo "$USAGE"; exit 1; fi;
@@ -189,17 +198,21 @@ if [ -z ${TREATMENT_NAME+x} ]; then echo "-g $MISSING"; echo "$USAGE"; exit 1; f
 echo; echo "Your Treatment group is ${TREATMENT_NAME}."
 
 if [ -z ${COMPARISON+x} ]; then 
+
      COMPARISON=$(Rscript $CONDA_PREFIX/bin/get_group_contrast.R ${SAMPLE_MAPPING_FILE} ${TREATMENT_NAME} |\
                  sed -e 's/\[1\] //g' | sed -e 's/"//g'); 
+
 fi
 echo; echo "These contrasts - ${COMPARISON} will be applied during DESeq2 analysis."
 
 if [ -z ${BUSCO_DATABASE+x} ]; then echo "-b $MISSING, you must proved a BUSCO database."; echo "$USAGE"; exit 1; fi; 
 
 if [ -z ${QSUB_NODES+x} ]; then 
+
     echo
     echo "-n $MISSING, you must provide a comma separated list of nodes to run your jobs on."
     echo "$USAGE"
+    echo
     exit 1
 
 fi 
@@ -220,9 +233,12 @@ if [ ${SKIP_STEPS} != "skip_nothing" ];then
         declare inFile=$(grep -c "${STEP}" "${PARAMETER_FILE}")
          
         if [ $inFile -eq 0 ]; then
+
                 echo
-                echo "${STEP} does not exist in ${PARAMETER_FILE}, hence I won't be skipping it."
-                continue
+                echo "${STEP} does not exist in ${PARAMETER_FILE}, hence I can't skip it."
+                echo "Please provide only valid step names then retry. Exiting..."
+                echo
+                exit 1
 
         else
 
@@ -259,19 +275,20 @@ declare -a REPLACEMENTS=($RNA_DATABASE $SAMPLE_MAPPING_FILE $TRANSCRIPT_PREFIX $
 # Set names
 for i in ${!TO_REPLACE[*]}; do
  
-declare inFile=$(grep -c "${TO_REPLACE[$i]}" "${PARAMETER_FILE}")	
+    declare inFile=$(grep -c "${TO_REPLACE[$i]}" "${PARAMETER_FILE}")	
 	
-	if [ $inFile -eq 0 ]; then
+    if [ $inFile -eq 0 ]; then
      
-            continue
+        continue
     
-	else
+    else
 		
-            sed -i -E "s:${TO_REPLACE[$i]}:${REPLACEMENTS[$i]}:g" ${PARAMETER_FILE}
+        sed -i -E "s:${TO_REPLACE[$i]}:${REPLACEMENTS[$i]}:g" ${PARAMETER_FILE}
    
-	fi
+    fi
 
 done
+
 source deactivate
 echo; echo "Your parameter file ${PARAMETER_FILE} is ready to run on Neatseq flow."
 echo 

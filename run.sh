@@ -35,7 +35,7 @@ where:
         Default: 'all' i.e. run the whole pipeline.
     -M  Minimum count for filtering out lowly expressed transcripts. Default value is 3.
     -R  Minimum number of samples or replicates within a treatment group to use during filtering. Default value is 2.
-    -C  Change tag name. Comma separated list of step name folowed by new tag name. For example: Import_reads,99.reanalyze,QC_imported_reads,99.reanalyze.
+    -C  Change tag name. Comma separated list of pairs of step name folowed by new tag name. For example: Import_reads,99.reanalyze,QC_imported_reads,99.reanalyze.
 "
 
 # Print usage if no arguement is passed to the script
@@ -46,7 +46,7 @@ if [ $# -eq 0 ]; then  echo; echo "$USAGE"; exit 1; fi
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hp:s:m:S:r:t:g:c:b:n:q:T:M:R:C:'	 OPTION; do
+while getopts ':hp:s:m:S:r:t:g:c:b:n:q:T:M:R:C:' OPTION; do
   case $OPTION in
     h) echo; echo "$USAGE"; exit 1;;
     p) PARAMETER_FILE=$OPTARG;;
@@ -70,16 +70,26 @@ while getopts ':hp:s:m:S:r:t:g:c:b:n:q:T:M:R:C:'	 OPTION; do
 done
 
 # Activate the non_model_RNA_Seq conda environment
-source activate non_model_RNA_Seq
+source activate non_model_RNA_Seq 
+
+if [ $? -ne 0 ]; then
+    
+    echo;echo "The non_model_RNA_Seq conda evironment has not been configured."
+    echo;echo "Please run configure.sh before running this script $(basename "$0")"
+    exit 1
+
+fi
 
 # Check missing arguments
 MISSING="is missing but required. Exiting."
 
 if [ -z ${PARAMETER_FILE+x} ]; then
+
     echo; echo "NeatSeq_Flow parmeter file not provided, am downloading a template..." 
     rm -rf non_model_RNA_Seq.yaml
     wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/non_model_RNA_Seq.yaml 
     PARAMETER_FILE="non_model_RNA_Seq.yaml"
+
 fi
 echo; echo "Your Parameter file is ${PARAMETER_FILE}."
 
@@ -100,10 +110,11 @@ if [ $CHANGE_TAG == true ];then
     NUMBER_OF_STEPS=$(( ${#STEPS2CHANGE[*]}/2 ))
 
 
-    # Ensure that the steps to change are provided with a new tag name i.e contains step name and the new tag for that step
+    # Ensure that the steps to change are provided with a new tag name i.e contains pairs of step name and the new tag names
     if [ $(( ${#STEPS2CHANGE[*]}%2 )) -ne 0 ]; then
    
-        echo "The step(s) and the new tag name(s) you provided : ${#STEPS2CHANGE[*]}  are not complete. Exiting...."
+        echo "The pair(s) of step(s) and new tag name(s) you provided : ${#STEPS2CHANGE[*]}  is/are  incomplete."
+        echo "Please provide complete pairs then try again.  Exiting...."
         exit 1
 
     else
@@ -114,12 +125,13 @@ if [ $CHANGE_TAG == true ];then
             declare STEP_NAME=${STEPS2CHANGE[$i]} 
             declare NEW_TAG_NAME=${STEPS2CHANGE[$i+1]}  
             declare inFile=$(grep -c "${STEP_NAME}" "${PARAMETER_FILE}")
-            echo "STEP name is : ${STEP_NAME} -> new tag name is: ${NEW_TAG_NAME}"
+
             if [ $inFile -eq 0 ]; then
 
                 echo
-                echo "${STEP_NAME} does not exist in ${PARAMETER_FILE}, hence i won't be renaming its tag."
-                continue
+                echo "${STEP_NAME} does not exist in ${PARAMETER_FILE}, hence i can't rename its tag."
+                echo "Please provide only valid step names then try again. Exiting..."
+                exit 1
 
             else
                  #echo "STEP name is : ${STEP_NAME} -> new tag name is: ${NEW_TAG_NAME}"
@@ -135,6 +147,23 @@ if [ $CHANGE_TAG == true ];then
     fi
 
 fi
+
+# Check if $TAG is missing
+if [ -z ${TAG+x} ]; then TAG="all"; fi; 
+
+# Check if tag is in the parameter file
+
+declare inFile=$(grep -Ec "^\s+tag:\s+${TAG}" "${PARAMETER_FILE}")
+
+if [[ $TAG != "all" && ${inFile} -eq 0 ]]; then
+
+    echo "The tag - ${TAG} you provided does not exist in ${PARAMETER_FILE}."
+    echo "please provide a valid tag and run again. Exiting ..."; 
+    exit 1
+
+fi
+
+echo; echo "I will run ${TAG} section(s) of ${PARAMETER_FILE}."
 
 
 # Ensure that no step has aleady been skipped in the parmeter file, if so, unskip them
@@ -190,26 +219,27 @@ echo; echo "Your Transcript Prefix is ${TRANSCRIPT_PREFIX}."
 
 if [ -z ${SKIP_STEPS+x} ]; then SKIP_STEPS="skip_nothing"; fi;
  
-if [ -z ${TAG+x} ]; then TAG="all"; fi; 
-echo; echo "I will run  ${TAG} section(s) of ${PARAMETER_FILE}."
-
 if [ -z ${MINIMUM_COUNT+x} ]; then MINIMUM_COUNT=3; fi; 
 echo "Your minimum count for filtering lowly expressed trancripts is  ${MINIMUM_COUNT}."
 
 if [ -z ${MINIMUM_REPLICATES+x} ]; then 
+
     MINIMUM_REPLICATES=2 
     echo 
     echo "The transcript must exist in at least ${MINIMUM_REPLICATES} replicates with a minimum of ${MINIMUM_COUNT} count(s) for it to be retained."
+
 fi
 
 if [ -z ${TREATMENT_NAME+x} ]; then echo "-g $MISSING"; echo; echo "$USAGE"; exit 1; fi;
 echo; echo "Your Treatment group is ${TREATMENT_NAME}."
 
 if [ -z ${COMPARISON+x} ]; then 
+
     COMPARISON=$(Rscript $CONDA_PREFIX/bin/get_group_contrast.R ${SAMPLE_MAPPING_FILE} ${TREATMENT_NAME} |\
                   sed -e 's/\[1\] //g' | sed -e 's/"//g')
     echo
     echo "These contrasts - ${COMPARISON} will be applied during DESeq2 analysis."
+
 fi
 
 if [ -z ${BUSCO_DATABASE+x} ]; then echo "-b $MISSING, you must proved a BUSCO database."; echo;echo "$USAGE"; exit 1; fi; 
@@ -239,8 +269,9 @@ if [ ${SKIP_STEPS} != "skip_nothing" ];then
         if [ $inFile -eq 0 ]; then
 
                 echo
-                echo "${STEP} does not exist in ${PARAMETER_FILE}, hence i won't be skipping it."
-                continue
+                echo "${STEP} does not exist in ${PARAMETER_FILE}, hence i can't skip it."
+                echo "Please provide only valid step names then retry. Exiting..."
+                exit 1
 
         else
 
@@ -295,7 +326,15 @@ done
 source deactivate 
 
 # Activate Netaseq_flow and run
-source activate NeatSeq_Flow
+source activate NeatSeq_Flow 
+if [ $? -ne 0 ]; then
+
+    echo "You have not installed NeatSeq_Flow." 
+    echo "Please run configure.sh before running this script $(basename "$0")"
+    exit 1
+
+fi
+
 export CONDA_BASE=$(conda info --root)
 
 if [ -d logs/ ]; then
@@ -313,7 +352,11 @@ else
 fi
 
 if [ "${TAG}" == "all" ]; then
+
     bash scripts/00.workflow.commands.sh  1> null &
+
 else
-    bash scripts/tags_scripts/${TAG}.sh 1> null & #|| echo "The tag - $TAG you provided does not exist, please provide a valid tag and run again."; exit 1;
+
+    bash scripts/tags_scripts/${TAG}.sh 1> null &
+
 fi
