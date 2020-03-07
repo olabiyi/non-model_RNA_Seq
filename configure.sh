@@ -52,21 +52,25 @@ cd $HOME
 # Install Miniconda 
 
 if [ ${INSTALL_MINICONDA} -eq 1 ]; then
+
     echo;echo "Installing Miniconda to your HOME directory ${HOME}."
     wget https://repo.continuum.io/miniconda/Miniconda3-4.7.12.1-Linux-x86_64.sh
     bash Miniconda3-4.7.12.1-Linux-x86_64.sh -bf
     echo;echo "Miniconda Installation complete!"
     rm -rf Miniconda3-4.7.12.1-Linux-x86_64.sh
+
 fi
 
 
 # Install Neatseq_flow env 
 if [ ${INSTALL_NEATSEQ_FLOW} -eq 1 ]; then
+
     echo;echo "Installing Neatseq Flow..."
     curl -LO https://raw.githubusercontent.com/bioinfo-core-BGU/NeatSeq-Flow-GUI/master/NeatSeq_Flow_GUI_installer.yaml
     conda env create -f NeatSeq_Flow_GUI_installer.yaml
     echo;echo "Neatseq Flow Installation completed successfully!"
     rm -rf NeatSeq_Flow_GUI_installer.yaml
+
 fi
 
 echo;echo "Creating DeSeq2 conda environment..."
@@ -86,27 +90,70 @@ source activate non_model_RNA_Seq
 echo;echo "non_model_RNA_Seq conda environment created successfully!"
 rm -rf non_model_RNA_Seq_conda.yaml
 
-cd $DIR
+cd $CONDA_PREFIX/
 
-# Set-up rnammer
-echo;echo "Setting-up rnammer with hmm..."
-# Download rnammer
-wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/rnammer.tar.gz
-tar -xvzf rnammer.tar.gz
-sed -i "s:/usr/cbs/bio/src/rnammer-1.2:$CONDA_PREFIX/opt/RNAMMERv1.2/:g" RNAMMERv1.2/rnammer
-sed -i -E "s:/usr/cbs/bio/bin/.+/:$CONDA_PREFIX/opt/hmmer-2.3.2/bin/:g" RNAMMERv1.2/rnammer
-sed -i  -E "s:/usr/s?bin:$CONDA_PREFIX/bin:g" RNAMMERv1.2/rnammer
+# Download databases
+echo;echo "Creating databases..."
+# Make a directory in the current directory to store databases
+[ -d databases ] || mkdir databases/
+cd databases/
 
-# Download hmmer v2.3.2 required by rnammer
-wget http://eddylab.org/software/hmmer/2.3.2/hmmer-2.3.2.tar.gz
-tar -xzvf hmmer-2.3.2.tar.gz
-cd hmmer-2.3.2/
-./configure --mandir=$PWD/man --bindir=$PWD/bin
-make
-make install
+[ -d rRNA ] || mkdir rRNA/
+cd rRNA/
+# rRNA database
+# Get rRNA sequences from the file path supplied and build the bwa index
+echo;echo "Building ribosomal RNA database..."
+DATABASE_NAME=$(basename ${rRNA_DATABASE} | sed -E 's/\..+$//g')
+bwa index -p ${DATABASE_NAME}  -a bwtsw ${rRNA_DATABASE} 
+
+if [ $? -ne 0 ]; then
+
+    echo;echo "You have not provided valid sequences for the construction of your rRNA database."
+    echo,echo  "Exiting..."
+    exit 1
+
+fi
+
+echo;echo "Done building ribosomal RNA database!"
 cd ..
-mv RNAMMERv1.2   hmmer-2.3.2/ $CONDA_PREFIX/opt/
-rm -rf rnammer.tar.gz hmmer-2.3.2.tar.gz
+
+# Trinotate databases - https://github.com/Trinotate/Trinotate.github.io/wiki/Software-installation-and-data-required
+[ -d Trinotate ] || mkdir Trinotate/
+cd Trinotate/
+export PERL5LIB=$CONDA_PREFIX/lib/site_perl/5.26.2/
+echo;echo "Building Trinotate databases..."
+Build_Trinotate_Boilerplate_SQLite_db.pl  Trinotate
+makeblastdb -in uniprot_sprot.pep -dbtype prot
+gunzip Pfam-A.hmm.gz
+hmmpress Pfam-A.hmm
+echo;echo "Done building Trinotate databases!"
+cd ..
+
+[ -d  BUSCO ] || mkdir BUSCO/
+cd BUSCO/
+# Download BUSCO_lineage dataset
+echo;echo "Downloading your BUSCO database..."
+wget http://busco.ezlab.org/v2/datasets/${BUSCO_DATABASE}
+tar -xvzf ${BUSCO_DATABASE}
+rm -rf ${BUSCO_DATABASE}
+echo;echo "Done building BUSCO database!"
+cd ..
+
+# Create Refseq proteins database
+[ -d Refseq ] || mkdir Refseq/
+cd Refseq/
+echo;echo "Downloading Refseq protein sequences..."
+wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/complete/*faa.gz
+echo;echo "Unzipping the sequences..."
+gunzip *.gz
+echo;echo "Concatenating the sequences to refseq_protein.faa"
+cat *.faa > refseq_protein.faa
+echo;echo "Making refseq_protein database..."
+makeblastdb -in refseq_protein.faa -out refseq_protein -dbtype prot
+echo;echo "Cleaning up..."
+rm -rf *faa
+echo;echo "Done building refseq_protein database!"
+cd ..
 
 echo;echo "Downloading scripts customized for the non-model RNA-Seq pipeline..."
 # Download scripts and files customized for the pipeline
@@ -129,65 +176,35 @@ sed -i -E 's/;mode = genome/mode = transcriptome/g' $CONDA_PREFIX/share/busco-3.
 sed -i -E "s:/usr/bin/:$CONDA_PREFIX/bin/:g" $CONDA_PREFIX/share/busco-3.0.2-8/config.ini.default
 cd ..
 
-echo;echo "Creating databases..."
-# Make a directory in the current directory to store databases
-[ -d databases ] || mkdir databases/
-cd databases/
 
-# Download databases
-# Trinotate databases - https://github.com/Trinotate/Trinotate.github.io/wiki/Software-installation-and-data-required
-[ -d Trinotate ] || mkdir Trinotate/
-cd Trinotate/
-export PERL5LIB=$CONDA_PREFIX/lib/site_perl/5.26.2/
-echo;echo "Building Trinotate databases..."
-Build_Trinotate_Boilerplate_SQLite_db.pl  Trinotate
-makeblastdb -in uniprot_sprot.pep -dbtype prot
-gunzip Pfam-A.hmm.gz
-hmmpress Pfam-A.hmm
-echo;echo "Done building Trinotate databases!"
+cd $DIR
+
+# Set-up rnammer
+echo;echo "Setting-up rnammer with hmm..."
+# Download rnammer
+wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/rnammer.tar.gz
+tar -xvzf rnammer.tar.gz
+sed -i "s:/usr/cbs/bio/src/rnammer-1.2:$CONDA_PREFIX/opt/RNAMMERv1.2/:g" RNAMMERv1.2/rnammer
+sed -i -E "s:/usr/cbs/bio/bin/.+/:$CONDA_PREFIX/opt/hmmer-2.3.2/bin/:g" RNAMMERv1.2/rnammer
+sed -i  -E "s:/usr/s?bin:$CONDA_PREFIX/bin:g" RNAMMERv1.2/rnammer
+
+# Download hmmer v2.3.2 required by rnammer
+wget http://eddylab.org/software/hmmer/2.3.2/hmmer-2.3.2.tar.gz
+tar -xzvf hmmer-2.3.2.tar.gz
+cd hmmer-2.3.2/
+./configure --mandir=$PWD/man --bindir=$PWD/bin
+make
+make install
 cd ..
-
-# Create Refseq proteins database
-[ -d Refseq ] || mkdir Refseq/
-cd Refseq/
-echo;echo "Downloading Refseq protein sequences..."
-wget ftp://ftp.ncbi.nlm.nih.gov/refseq/release/complete/*faa.gz
-echo;echo "Unzipping the sequences..."
-gunzip *.gz
-echo;echo "Concatenating the sequences to refseq_protein.faa"
-cat *.faa > refseq_protein.faa
-echo;echo "Making refseq_protein database..."
-makeblastdb -in refseq_protein.faa -out refseq_protein -dbtype prot
-echo;echo "Cleaning up..."
-rm -rf *faa
-echo;echo "Done building refseq_protein database!"
-cd ..
-
-[ -d rRNA ] || mkdir rRNA/
-cd rRNA/
-# rRNA database
-# Get rRNA sequences from the file path supplied and build the bwa index
-echo;echo "Building ribosomal RNA database..."
-DATABASE_NAME=$(basename ${rRNA_DATABASE} | sed -E 's/\..+$//g')
-bwa index -p ${DATABASE_NAME}  -a bwtsw ${rRNA_DATABASE} #|| echo "You have not provided valid sequences for the construction of your rRNA database. Make sure you prepare and copy it to  $CONDA_PREFIX/databases/rRNA/"
-echo;echo "Done building ribosomal RNA database!"
-cd ..
-
-[ -d  BUSCO ] || mkdir BUSCO/
-cd BUSCO/
-# Download BUSCO_lineage dataset
-echo;echo "Downloading your BUSCO database..."
-wget http://busco.ezlab.org/v2/datasets/${BUSCO_DATABASE}
-tar -xvzf ${BUSCO_DATABASE}
-rm -rf ${BUSCO_DATABASE}
-echo;echo "Done building BUSCO database!"
-cd ..
-
-cd $DIR 
+mv RNAMMERv1.2   hmmer-2.3.2/ $CONDA_PREFIX/opt/
+rm -rf rnammer.tar.gz hmmer-2.3.2.tar.gz
+ 
 # Download the template non_model_RNA_Seq.yaml parameter file
 wget  https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/non_model_RNA_Seq.yaml
 
-echo;echo "Done! Your environment was configured successfully." 
-echo;echo "The path to to your non_model_RNA_Seq conda environment is : $CONDA_PREFIX ."
+echo;echo "The path to to your non_model_RNA_Seq conda environment is : ${CONDA_PREFIX}."
 echo;echo "Your template parameter file is non_model_RNA_Seq.yaml. You can edit it as you please but do not change any capitalized text in the file."
+echo "Also do not delete any pound '#' sign in the file"
+echo;echo "Done! Your environment was configured successfully." 
+echo
 source deactivate 

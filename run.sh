@@ -113,7 +113,7 @@ if [ $CHANGE_TAG == true ];then
     # Ensure that the steps to change are provided with a new tag name i.e contains pairs of step name and the new tag names
     if [ $(( ${#STEPS2CHANGE[*]}%2 )) -ne 0 ]; then
    
-        echo "The pair(s) of step(s) and new tag name(s) you provided : ${#STEPS2CHANGE[*]}  is/are  incomplete."
+        echo "The pair(s) of step(s) and new tag name(s) you provided : ${STEPS2CHANGE[*]}  is/are  incomplete."
         echo "Please provide complete pairs then try again.  Exiting...."
         exit 1
 
@@ -245,10 +245,12 @@ fi
 if [ -z ${BUSCO_DATABASE+x} ]; then echo "-b $MISSING, you must proved a BUSCO database."; echo;echo "$USAGE"; exit 1; fi; 
 
 if [ -z ${QSUB_NODES+x} ]; then 
+
     echo
     echo "-n $MISSING, you must provide a comma separated list of nodes to run your jobs on."
     echo;echo "$USAGE"
     exit 1
+
 fi 
 
 if [ -z ${QSUB_Q+x} ]; then echo "-q $MISSING, you must provide a qsub queue."; echo; echo "$USAGE"; exit 1; fi; 

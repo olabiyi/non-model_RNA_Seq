@@ -104,7 +104,7 @@ if [ $CHANGE_TAG == true ];then
     # Ensure that the steps to change are provided with a new tag name i.e contains step name and the new tag for that step
     if [ $(( ${#STEPS2CHANGE[*]}%2 )) -ne 0 ]; then
 
-        echo "The step(s) and the new tag name(s) you provided : ${#STEPS2CHANGE[*]}  are not complete. Exiting...."
+        echo "The step(s) and the new tag name(s) you provided : ${STEPS2CHANGE[*]}  are not complete. Exiting...."
         exit 1
 
     else
