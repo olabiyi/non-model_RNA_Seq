@@ -108,8 +108,8 @@ Vars:
     grouping:   SAMPLE_MAPPING_FILE
     Transcript_prefix:    TRANSCRIPT_PREFIX    # Prefix to use when renaming transcripts
     Treatment_name:    TREATMENT_NAME    # group name in samples_mapping_file.txt to use during filtering
-    min_count:    MINIMUM_COUNT    #  Minimum count for filtering out lowly expresed transcripts
-    min_sample:    MINIMUM_REPLICATES  # Minimum number of samples or replicates within a treatment group to use during filtering
+    min_count:    'MINIMUM_COUNT'    #  Minimum count for filtering out lowly expresed transcripts
+    min_sample:   'MINIMUM_REPLICATES'  # Minimum number of samples or replicates within a treatment group to use during filtering
 
     
 # ---- Statistics, clustering and enrichment analysis using DeSeq2 module
@@ -283,7 +283,7 @@ Step_params:
                 suffix:             .fasta              
         redirects:                  
             -p:     '"(.+)"'
-            -r:     '"{Vars.Transcript_prefix}\$1"'
+            -r:     '''"{Vars.Transcript_prefix}\$1"'''
         #SKIP Rename_Transcripts:            
 
 

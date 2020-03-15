@@ -2,7 +2,7 @@
 RNA-Seq analysis for non-model organisms
 *****************************************
 
-:Author: Olabiyi Obayomi, Menachem Sklarz, Liron Levin, Vered Chalifa-Caspi
+:Authors: Olabiyi Obayomi, Menachem Sklarz, Liron Levin, Vered Chalifa-Caspi
 :Affiliation: Bioinformatics Core Facility
 :E-mail: obadbotanist@yahoo.com
 :Organization: Ben Gurion University of the Negev, Beer-Sheva.
@@ -106,7 +106,7 @@ Section name - Description
     * *Generate_Gene_Transcript_Map*: Generate a gene to transcript mapping file by mapping the genes to thier respective isosforms with Trinity using the ``trinity_mapping`` module.
     * *Map_reads_to_full_transcriptome*: Map the quality checked trimmed reads to the assembled transcriptome using the gene to trancripts map in order to generate a count of reads per sample mappped to each gene or transcript by RSEM with Trinity using the ``trinity_mapping`` module.
     * *Generate_count_matrix*: Generate count or abundance matrices of both raw and normalized read counts per gene per sample by concatenating the counts per sample generated in the ``Map_reads_to_full_transcriptome`` step  with Trinity using ``trinity_statistics`` module. Statistics generated for these count matrices will then be used for the filteration step below.
-    * *Filter_low_expressed_transcripts*: Retain transcripts with at least x reads in at least n replicates in at least one treatment group using the ``Generic`` module by running the R script "filter_trinity_by_counts.R". Transcripts that pass this filtering step are referred to as the "filtered transcriptome" through out this documentation and in the parameter file. By default we retain transcripts with at least 3 reads in at least 2 replicates or samples in a treatment group. You should adjust these parameters in order to meet your specific filtering criteria by passing the appropriate number to -C and -R parameters of ``run.sh``.
+    * *Filter_low_expressed_transcripts*: Retain transcripts with at least x reads in at least n replicates in at least one treatment group using the ``Generic`` module by running the R script "filter_trinity_by_counts.R". Transcripts that pass this filtering step are referred to as the "filtered transcriptome" through out this documentation and in the parameter file. By default, we retain transcripts with at least 3 reads in at least 2 replicates or samples in a treatment group. You should adjust these parameters in order to meet your specific filtering criteria by passing the appropriate number to -M and -R parameters of ``run.sh``.
     * *quastQC_filtered_transcripts* and *BuscoQC_filtered_transcripts*: Assess the quality of the filtered transcriptome using quast and BUSCO as described above.
     * *Make_filtered_transcripts_BLAST_db*: Make a blast database from the filtered transcriptome using the ``makeblastdb`` module to be uploaded to a blast server.
     * *Generate_filtered_Gene_Transcript_Map*: Generate a gene to transcript mapping file of the filtered transcriptome by mapping the genes to thier respective isosforms with Trinity using the ``trinity_mapping`` module.
@@ -121,8 +121,8 @@ Section name - Description
      * *Split_representative_fasta*: Split the fasta file of the representative transcripts to 1000 parts for parallelization when running blast using the ``fasta_splitter`` module. *From this step onwards, analyses are performed on subsamples of the representative transcripts*. Recombining the results is done in steps *Merge_refseq_blastx_xmls* and *Merge_blast_results*.
 
 
-     * Using Blast2GO
-        * *Refseq_protein_blastx*: Query the representative tanscripts with blastx against Refseq protein database using the ``blast`` module and output the results in XML format.
+     * Prepare XML file for functional annotation using Blast2GO
+        * *Refseq_protein_blastx*: Query the representative tanscripts with blastx against NCBI's Refseq protein database using the ``blast`` module and output the results in XML format.
         * *Merge_refseq_blastx_xmls*: Merge the XML files produced in the previous step for the transcript subsamples in preparation for functional annotaton using Blast2GO with the python script "BlastXMLmerge.py" using the ``Generic`` module. The Xml file generated from this step can then be export to Blast2GO desktop for function annotation. 
 		
      * Using Trinotate
@@ -131,14 +131,14 @@ Section name - Description
         * *Identify_coding_region*: Find coding sequences in the transcripts and produce predicted protein sequences using the ``TransDecoder`` module.
         * *Swiss_prot_blastp*: Query translated representative transcripts with blastp against swissprot database using the ``blast`` module.
         * *Identify_protein_domain*: Run hmmscan against PFAM-A database with the translated representative transcript sequences using the ``hmmscan`` module..
-        * *Predict_rRNA*: Run RNAMMER to predict rRNA sequences in the representative transcripts using the ``RnammerTranscriptome`` module..
+        * *Predict_rRNA*: Run RNAMMER to predict rRNA sequences in the representative transcripts using the ``RnammerTranscriptome`` module.
 	* *Merge_protein_domain_results*: Merge the hmmscan table produced in the ``Identify_protein_domain``  step for the transcript subsamples using the ``merge_tables`` module.
         * *Merge_blast_results*: Merge the blast tables produced in the previous steps for the transcript subsamples using the ``merge_tables`` module.
         * *Generate_annotation_table*: Read the tables and produce the final annotation files i.e an excel annotation table and a sqlite database using the ``Trinotate`` module.
 
 
 #. **04.Statistics** - Statistical testing for differentially expressed genes and function enrichment analysis 
-    * Statistical_analysis: Perform statistical testing for differential gene expression, clustering, and function enrichment analyses on the `genes.result.txt` files from the *Map_reads_to_filtered_transcriptome* step using the ``DeSeq2`` module. Please see `Deseq2 tutorial <https://github.com/bioinfo-core-BGU/NeatSeq-Flow_Workflows/blob/master/DeSeq_Workflow/Tutorial.md>`_ for an indepth tutorial on how to customize the DeSeq2 module, its many functionalities and a description of the output files generated. The DeSeq2 module performs:
+    * Statistical_analysis: Perform statistical testing for differential gene expression, clustering, and function enrichment analyses on the `genes.result.txt` files from the *Map_reads_to_filtered_transcriptome* step using the ``DeSeq2`` module. Please see `DeSeq2 tutorial <https://github.com/bioinfo-core-BGU/NeatSeq-Flow_Workflows/blob/master/DeSeq_Workflow/Tutorial.md>`_ for an indepth tutorial on how to customize the DeSeq2 module, its many functionalities and a description of the output files generated. The DeSeq2 module performs:
        - Differential Gene Expression Using 'DESeq2' R Package
        - Gene Annotation from the Trinotate Results
        - Quality control eg. MA,Volcano and PCAs
@@ -154,7 +154,7 @@ Section name - Description
 Setting-up the conda environments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. **Get your organism specific ribosomal RNA sequences ready** . To filter out ribosomal RNA sequences, download your organism's ribosomal RNA sequences from NCBI or SILVA then pass the location of the sequence file to the -r option of `configure.sh` script described below. If a collection of ribosomal RNA reference sequences is unavailable for the organism of interest, you may retrieve relevant sequences from a broader taxonomic category (e.g. crustaceans) by searching NCBI Entrez with a search term like ribosomal rna[Title] OR rrna[Title] AND "Crustacea"[Organism]”.
+#. **Get your organism specific ribosomal RNA sequences ready** . To filter out ribosomal RNA sequences, download your organism's ribosomal RNA sequences from NCBI, SILVA or any other rRNA database then pass the location of the sequences file to the -r option of `configure.sh` script described below. If a collection of ribosomal RNA reference sequences is unavailable for the organism of interest, you may retrieve relevant sequences from a broader taxonomic category (e.g. crustaceans) by searching NCBI Entrez with a search term like ribosomal rna[Title] OR rrna[Title] AND "Crustacea"[Organism]”.
 
 
 #. **Select your non-model organism's** `BUSCO dataset <http://busco.ezlab.org/v2/datasets/>`_ from the list provided below and pass your choice to the -b flag of `configure.sh` and `run.sh` scripts below to download and install it.
@@ -208,7 +208,7 @@ Setting-up the conda environments
         * alveolata_stramenophiles_ensembl.tar.gz
 
 
-#. **Run the one time environment configuration file** `configure.sh`. To configure your environment, download configure.sh, pass the required arguements i.e the path to your rRNA sequences and your choice BUSCO dataset from the list above to the -r and -b options of the script, respectively. Please see the code examples below. 
+#. **Run the one time environment configuration file** `configure.sh`. To configure your environment, download ``configure.sh``, pass the required arguements i.e. the path to your rRNA sequences and your choice BUSCO dataset from the list above to the -r and -b options of the script, respectively. Please see the code examples below. 
     
     .. Attention::Please note that the configuration process can take almost a day to complete and therefore, we will use the “&” at the end of the command to run the process in the background. In order to know what configure.sh is doing, we will write its output to the file ``configure.log``. You can use ``$ tail -f configure.log`` to check the current status of the program.
 
@@ -230,74 +230,56 @@ Setting-up the conda environments
    
 
 
-Running the pipeline on our demo data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+Running the pipeline on your data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 
-Description of dataset
-======================
-
-The demo data used in this tutorial is from an experiment performed to test the effect of feeding habit on *Hippolyte inermis* . Samples of this crustacean were either fed diatoms (PL_FD) or not (PL_NFD) at the post-larvae stage. Each treatment wasreplicated three times, samples collected, RNA sequences extracted and then sequenced on an illumina HiSeq 2000 platform producing paired-end sequences each 150 bp long. For a full description of the methods and experimental design, please see `Sagi et al. (2020) <https://www.science.com/doi:1030393039303>`_ .
-
-Tutorial
-========
-
-#. Create a project directory and change to it. We call it ``tutorial`` here but you can give it any name you like.
+#. Create a project directory and change into it. We call it ``tutorial`` here but you can give it any name you like.
 
    .. code-block:: bash
 
       mkdir tutorial && cd tutorial
 
 
-#. Get the raw data:
+#. Get the your fastq data ready.
 
 
-   .. code-block:: bash
-
-       wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/raw_reads.tar.gz
-       tar -xvzf raw_reads.tar.gz 
-       rm -rf raw_reads.tar.gz
-
-
-#. Get sample file:
-
-   .. code-block:: bash
-
-      wget  https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/sample_data.nsfs
+#. Get your neatseq flow formatted sample file ready. In the sample run below, we call it `sample_data.nsfs` but you can give it any name you like.
 	  
-   Content of sample file
+   Content of sample_data.nsfs
 
    ::
 
-    Title	non-model_RNA_seq
+    Title	project_title
 
-    #SampleID	Type	Path    lane
-    Sample1	Forward	raw_reads/Sample1_F1.fastq.gz 1
-    Sample1	Forward	raw_reads/Sample1_F2.fastq.gz 2
-    Sample1	Reverse	raw_reads/Sample1_R1.fastq.gz 1
-    Sample1	Reverse	raw_reads/Sample1_R2.fastq.gz 2
-    Sample2	Forward	raw_reads/Sample2_F1.fastq.gz 1
-    Sample2	Reverse	raw_reads/Sample2_R1.fastq.gz 1
-    Sample2	Forward	raw_reads/Sample2_F2.fastq.gz 2
-    Sample2	Reverse	raw_reads/Sample2_R2.fastq.gz 2
-
-#. Get sample mapping file
-
-   .. code-block:: bash
-
-      wget  https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/sample_grouping.txt
+    #SampleID	Type	Path    
+    Sample1	Forward	raw_reads/Sample1_F1.fastq.gz
+    Sample1	Forward	raw_reads/Sample1_F2.fastq.gz
+    Sample2	Forward	raw_reads/Sample2_F1.fastq.gz
+    Sample2	Reverse	raw_reads/Sample2_R1.fastq.gz
+    Sample3	Forward	raw_reads/Sample3_F1.fastq.gz
+    Sample3	Reverse	raw_reads/Sample3_R1.fastq.gz
+    Sample4	Forward	raw_reads/Sample4_F1.fastq.gz
+    Sample4	Reverse	raw_reads/Sample4_R1.fastq.gz
+    Sample5	Forward	raw_reads/Sample5_F1.fastq.gz
+    Sample5	Reverse	raw_reads/Sample5_R1.fastq.gz
+    Sample6	Forward	raw_reads/Sample6_F1.fastq.gz
+    Sample6	Reverse	raw_reads/Sample6_R1.fastq.gz
 
 
-   Content of sample mapping file
+#. Get your sample mapping file ready. In the sample run below, we call it `sample_grouping.txt` but you can give it any name you like.
+
+
+   Content of sample_grouping.txt
 
    ::
 
     #SampleID	Batch	Treatment
-    C02.PL_FD1	C	PL_FD
-    C03.PL_FD2	C	PL_FD
-    C04.PL_FD3	C	PL_FD
-    C05.PL_NFD1	C	PL_NFD
-    C06.PL_NFD2	C	PL_NFD
-    C07.PL_NFD3	C	PL_NFD
+    sample1	A	PL_FD
+    sample2	A	PL_FD
+    sample3	B	PL_FD
+    sample4	B	PL_NFD
+    sample5	C	PL_NFD
+    sample6	C	PL_NFD
 
 
 #. Run the pipeline
@@ -311,10 +293,17 @@ Tutorial
 
              # run this as many times as you want, each time specifying the parameters to the script as you please. Type ``./run.sh -h`` at the terminal for further help and options that can be passed to the script.
              # Run the whole pipeline
-             ./run.sh -s sample_data.nsfs -m sample_grouping.txt -t Hippolyte3_ -b 'metazoa_odb9.tar.gz' -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22
-      
+             bash ./run.sh -s sample_data.nsfs -m sample_grouping.txt -t transcript_prefix_ -b 'metazoa_odb9.tar.gz' -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22
+       
+             # Run only Refseq steps. By default the refseq steps are skipped because it takes a long time to complete. In order to run the refseq steps only after running the whole pipeline
+             bash ./run.sh -s sample_data_body.nsfs -m sample_grouping_body.txt -t transcript_prefix_ -b metazoa_odb9.tar.gz -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22 -T 99.reanalyze -r 1 -C Refseq_protein_blastx,99.reanalyze,Merge_refseq_blastx_xmls,99.reanalyze 
+
              # Run a specific "Tag" or section. Here we run the ``04.Statistics`` section in order to perform only statistical and enrichment analysis.
-             ./run.sh -s sample_data.nsfs -p non_model_RNA_Seq.yaml -m sample_grouping_3.txt -t Hippolyte3_ -b 'metazoa_odb9.tar.gz' -T 04.Statistics -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22
+             bash ./run.sh -s sample_data.nsfs -p non_model_RNA_Seq.yaml -m sample_grouping.txt -t transcript_prefix_ -b 'metazoa_odb9.tar.gz' -T 04.Statistics -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22
+            
+            # To Skip steps. Specify the step names to skip as a comma separated list to the -S option.
+            bash ./run.sh -s sample_data.nsfs -m sample_grouping_body.txt -t transcript_prefix_ -b metazoa_odb9.tar.gz -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22 -S Import_reads,QC_imported_reads,Trim_imported_reads,QC_trimmed_reads,SummarizeQC_imported_reads,SummarizeQC_trimmed_reads,Map_reads_to_rRNA,Filter_unmapped_reads,QC_unmapped_reads,SummarizeQC_unmapped_reads_and_alignment
+
 
      - Edit parameter file and run Neatseq_flow via the command line
 
@@ -323,19 +312,19 @@ Tutorial
              # Dowload prepare_parmeter_file.sh and then make it executable
              wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/prepare_parameter_file.sh && chmod +x prepare_parameter_file.sh
              # Edit the parameter file automatically
-             ./prepare_parameter_file.sh -s sample_data.nsfs -m sample_grouping.txt -t Hippolyte3_ -b 'metazoa_odb9.tar.gz' -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22
+             bash ./prepare_parameter_file.sh -s sample_data.nsfs -m sample_grouping.txt -t transcript_prefix_ -b 'metazoa_odb9.tar.gz' -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22
          
              # Run Neatseq flow
 
              # Download the run_neatseq_flow.sh script
              wget wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/run_neatseq_flow.sh && chmod +x run_neatseq_flow.sh   
              # Run the whole pipeline
-             run_neatseq_flow.sh
-             # Run a specific section ``-T`` of the pipeline
-             run_neatseq_flow.sh -T 00.Quality_check
+             bash ./run_neatseq_flow.sh -s sample_data.nsfs  -m sample_grouping.txt  -p non_model_RNA_Seq.yaml
+             # Run a specific section ``-T`` of the pipeline. In the example quality check will only be perform. Type ./run_neatseq_flow.sh -h for usage information. 
+             bash ./run_neatseq_flow.sh -s sample_data.nsfs  -m sample_grouping.txt  -p non_model_RNA_Seq.yaml -T 00.Quality_check
        
 
-     - Load edited paramater file into Neatseq flow GUI, edit even further then run via the GUI. For an indepth tutorial on how to use the GUI please see `Neatseq flow GUI tutorial <https://neatseq-flow.readthedocs.io/en/latest/Tutorial.html>`_ .
+     - Load edited paramater file into Neatseq flow GUI, edit even further then run via the GUI. For an indepth tutorial on how to use the GUI please see `Neatseq flow GUI tutorial <https://neatseq-flow.readthedocs.io/en/latest/Tutorial.html>`_ . Please note that unfortunately a parameter file that has been edited via the GUI cannot be run via the command line.
 
           .. code-block:: bash
              
