@@ -53,7 +53,6 @@ echo;echo "Configuration will take a day to complete, so go do something else an
 cd $HOME
 
 # Install Miniconda 
-
 if [ ${INSTALL_MINICONDA} -eq 1 ]; then
 
     echo;echo "Installing Miniconda to your HOME directory ${HOME}."
@@ -64,36 +63,64 @@ if [ ${INSTALL_MINICONDA} -eq 1 ]; then
 
 fi
 
-
-# Install Neatseq_flow env 
+# Install Neatseq_flow env
 if [ ${INSTALL_NEATSEQ_FLOW} -eq 1 ]; then
 
+   FOUND=$(conda env list | cut  -d" " -f1  |grep -c "NeatSeq_Flow")
+   if [ ${FOUND} == 0 ]; then
     echo;echo "Installing Neatseq Flow..."
     curl -LO https://raw.githubusercontent.com/bioinfo-core-BGU/NeatSeq-Flow-GUI/master/NeatSeq_Flow_GUI_installer.yaml
     conda env create -f NeatSeq_Flow_GUI_installer.yaml --force
     echo;echo "Neatseq Flow Installation completed successfully!"
     rm -rf NeatSeq_Flow_GUI_installer.yaml
 
+   else
+
+    echo;echo "Neatseq Flow is already Installed, skipping its installation..."
+
+   fi
+
 fi
 
-echo;echo "Creating DeSeq2 conda environment..."
-# Create DeSeq2 environment
-wget https://raw.githubusercontent.com/bioinfo-core-BGU/NeatSeq-Flow_Workflows/master/DeSeq_Workflow/DeSeq2_module/DeSeq2_env_install.yaml
-# Correct the version problem with biconductor-sva
-sed -i "s/bioconductor-sva=3.8/bioconductor-sva/g" DeSeq2_env_install.yaml
-conda env create -f DeSeq2_env_install.yaml --force
-echo;echo "DeSeq2 conda environment created successfully!"
-rm -rf DeSeq2_env_install.yaml
+# Install DeSeq2
+FOUND=$(conda env list | cut  -d" " -f1  |grep -c "DeSeq2")
+if [ ${FOUND} == 0 ]; then
 
-echo;echo "Creating non_model_RNA_Seq conda environment..."
-# Create non_model_RNA_Seq conda environment and set it up
-wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/non_model_RNA_Seq_conda.yaml
-conda env create -f non_model_RNA_Seq_conda.yaml --force
+    echo;echo "Creating DeSeq2 conda environment..."
+    # Create DeSeq2 environment
+    wget https://raw.githubusercontent.com/bioinfo-core-BGU/NeatSeq-Flow_Workflows/master/DeSeq_Workflow/DeSeq2_module/DeSeq2_env_install.yaml
+    # Correct the version problem with biconductor-sva
+    sed -i "s/bioconductor-sva=3.8/bioconductor-sva/g" DeSeq2_env_install.yaml
+    conda env create -f DeSeq2_env_install.yaml --force
+    echo;echo "DeSeq2 conda environment created successfully!"
+    rm -rf DeSeq2_env_install.yaml
+
+else
+
+    echo;echo "DeSeq2  conda environment already exists, skipping its installation..."
+
+fi
+
+# Install non_model_RNA_Seq
+FOUND=$(conda env list | cut  -d" " -f1  |grep -c "non_model_RNA_Seq")
+if [ ${FOUND} == 0 ]; then
+
+    echo;echo "Creating non_model_RNA_Seq conda environment..."
+    # Create non_model_RNA_Seq conda environment and set it up
+    wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/non_model_RNA_Seq_conda.yaml
+    conda env create -f non_model_RNA_Seq_conda.yaml --force
+    echo;echo "non_model_RNA_Seq conda environment created successfully!"
+    rm -rf non_model_RNA_Seq_conda.yaml
+
+else
+
+    echo;echo "non_model_RNA_Seq conda environment already exists, skipping its installation..."
+
+fi
+
 source activate non_model_RNA_Seq
-echo;echo "non_model_RNA_Seq conda environment created successfully!"
-rm -rf non_model_RNA_Seq_conda.yaml
-
 cd $CONDA_PREFIX/
+
 
 # Download databases
 echo;echo "Creating databases..."
