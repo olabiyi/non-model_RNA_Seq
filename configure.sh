@@ -67,7 +67,8 @@ fi
 if [ ${INSTALL_NEATSEQ_FLOW} -eq 1 ]; then
 
    FOUND=$(conda env list | cut  -d" " -f1  |grep -c "NeatSeq_Flow")
-   if [ ${FOUND} == 0 ]; then
+   if [ ${FOUND} -eq 0 ]; then
+    
     echo;echo "Installing Neatseq Flow..."
     curl -LO https://raw.githubusercontent.com/bioinfo-core-BGU/NeatSeq-Flow-GUI/master/NeatSeq_Flow_GUI_installer.yaml
     conda env create -f NeatSeq_Flow_GUI_installer.yaml --force
@@ -76,7 +77,7 @@ if [ ${INSTALL_NEATSEQ_FLOW} -eq 1 ]; then
 
    else
 
-    echo;echo "Neatseq Flow is already Installed, skipping its installation..."
+    echo;echo "Neatseq Flow is already installed, skipping its installation..."
 
    fi
 
@@ -84,7 +85,7 @@ fi
 
 # Install DeSeq2
 FOUND=$(conda env list | cut  -d" " -f1  |grep -c "DeSeq2")
-if [ ${FOUND} == 0 ]; then
+if [ ${FOUND} -eq 0 ]; then
 
     echo;echo "Creating DeSeq2 conda environment..."
     # Create DeSeq2 environment
@@ -103,7 +104,7 @@ fi
 
 # Install non_model_RNA_Seq
 FOUND=$(conda env list | cut  -d" " -f1  |grep -c "non_model_RNA_Seq")
-if [ ${FOUND} == 0 ]; then
+if [ ${FOUND} -eq 0 ]; then
 
     echo;echo "Creating non_model_RNA_Seq conda environment..."
     # Create non_model_RNA_Seq conda environment and set it up
