@@ -225,7 +225,7 @@ Setting-up the conda environments
        #  replacing "path/to/rRNA_sequences.fasta" with the correct path to your rRNA sequences.
        bash ./configure.sh -m 0 -n 0 -r path/to/rRNA_sequences.fasta -b metazoa_odb9.tar.gz >configure.log 2>&1 &
    
-       # Monitor the installation
+       # Monitor the installation. Use "Cntrl + C" to exit the tail command.
        tail -f configure.log
    
 
@@ -253,7 +253,7 @@ Running the pipeline on your data
 
     #SampleID	Type	Path    
     Sample1	Forward	raw_reads/Sample1_F1.fastq.gz
-    Sample1	Forward	raw_reads/Sample1_F2.fastq.gz
+    Sample1	Reverse	raw_reads/Sample1_R1.fastq.gz
     Sample2	Forward	raw_reads/Sample2_F1.fastq.gz
     Sample2	Reverse	raw_reads/Sample2_R1.fastq.gz
     Sample3	Forward	raw_reads/Sample3_F1.fastq.gz
@@ -296,7 +296,7 @@ Running the pipeline on your data
              bash ./run.sh -s sample_data.nsfs -m sample_grouping.txt -t transcript_prefix_ -b 'metazoa_odb9.tar.gz' -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22
        
              # Run only Refseq steps. By default the refseq steps are skipped because it takes a long time to complete. In order to run the refseq steps only after running the whole pipeline
-             bash ./run.sh -s sample_data_body.nsfs -m sample_grouping_body.txt -t transcript_prefix_ -b metazoa_odb9.tar.gz -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22 -T 99.reanalyze -r 1 -C Refseq_protein_blastx,99.reanalyze,Merge_refseq_blastx_xmls,99.reanalyze 
+             bash ./run.sh -s sample_data.nsfs -m sample_grouping_body.txt -t transcript_prefix_ -b metazoa_odb9.tar.gz -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22 -T 99.reanalyze -r 1 -C Refseq_protein_blastx,99.reanalyze,Merge_refseq_blastx_xmls,99.reanalyze 
 
              # Run a specific "Tag" or section. Here we run the ``04.Statistics`` section in order to perform only statistical and enrichment analysis.
              bash ./run.sh -s sample_data.nsfs -p non_model_RNA_Seq.yaml -m sample_grouping.txt -t transcript_prefix_ -b 'metazoa_odb9.tar.gz' -T 04.Statistics -q bioinfo.q -g Treatment -n sge1027,sge1029,sge1030,sge1031,sge1032,sge1033,sge213,sge214,sge224,sge37,sge22

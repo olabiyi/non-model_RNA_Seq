@@ -11,6 +11,7 @@ USAGE="$(basename "$0") [-h -T value -p file] [-s file -m file]
 --EXAMPLE: "$(basename "$0")" -s sample_data.nsfs  -m sample_grouping.txt  -p non_model_RNA_Seq.yaml -T 00.Quality_check  
 where:
     -h  Show this help text.
+    -v  Show this script's version number.
     -p  Neatseq_flow parameter file that has been modified by the script 'prepare_parameter_file.sh'.
     -s  Neatseq_flow sample file.
     -m  Samples to treatment mapping file.
@@ -19,14 +20,16 @@ where:
 
 # Print usage and exit if no arguement is passed to the script
 if [ $# -eq 0 ]; then  echo; echo "$USAGE"; exit 1; fi
+VERSION=1.0
 
 
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hp:s:m:T:' OPTION; do
+while getopts ':hvp:s:m:T:' OPTION; do
   case $OPTION in
     h) echo "$USAGE"; exit 1;;
+    v) echo;echo "v${VERSION}"; exit 1;;
     p) PARAMETER_FILE=$OPTARG;;
     s) SAMPLE_FILE=$OPTARG;;
     m) SAMPLE_MAPPING_FILE=$OPTARG;;

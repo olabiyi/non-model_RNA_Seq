@@ -16,6 +16,7 @@ USAGE="$(basename "$0") [-h] [-p file] [ -s file -m file -p file -S comma separa
 			      -T 00.Quality_check -R 2 -M 3 -C Import_reads,99.reanalyze,QC_imported_reads,99.reanalyze 
 where:
     -h  Show this help text.
+    -v  Show this script's version number.
     -p  Neatseq_flow parameter file to modify and run. It must be correctly formated as the default file. 
          By default it will be downloaded from the internet.
     -s  Neatseq_flow sample file.
@@ -40,15 +41,17 @@ where:
 
 # Print usage if no arguement is passed to the script
 if [ $# -eq 0 ]; then  echo; echo "$USAGE"; exit 1; fi
+VERSION=1.0
 
 
 
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hp:s:m:S:r:t:g:c:b:n:q:T:M:R:C:' OPTION; do
+while getopts ':hvp:s:m:S:r:t:g:c:b:n:q:T:M:R:C:' OPTION; do
   case $OPTION in
     h) echo; echo "$USAGE"; exit 1;;
+    v) echo;echo "v${VERSION}"; exit 1;;
     p) PARAMETER_FILE=$OPTARG;;
     s) SAMPLE_FILE=$OPTARG;;
     m) SAMPLE_MAPPING_FILE=$OPTARG;;

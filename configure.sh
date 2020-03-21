@@ -12,6 +12,7 @@ USAGE="$(basename "$0") [-h] [ -m value -n value -r file path -b value]
 --EXAMPLE: bash "$(basename "$0")" -m 1 -n 1 -r database/rRNA_sequences.fasta -b metazoa_odb9.tar.gz 
 where:
     -h  Show this help text.
+    -v  Get the script version number.
     -m  Should Miniconda be installed? If set to 1, Miniconda will be installed otherwise it won't be installed. Default value is 1, it will be installed.
     -n  Should NeatSeq_Flow be installed? If set to 1, NeatSeq_Flow will be installed otherwise it won't be installed. Default value is 1, it will be installed.
     -r  File path to your rRNA sequences. These sequences will be used to build a database that will be used by bwa and samtools to filter out unwanted rRNA sequences.
@@ -21,13 +22,15 @@ where:
 
 # Print usage if no arguement is passed to the script
 if [ $# -eq 0 ]; then  echo; echo "$USAGE"; exit 1; fi
+VERSION=1.0
 
 ### Terminal Arguments ---------------------------------------------------------
 
 # Import user arguments
-while getopts ':hm:n:r:b:' OPTION; do
+while getopts ':hvm:n:r:b:' OPTION; do
   case $OPTION in
     h) echo;echo "$USAGE"; exit 1;;
+    v) echo;echo "v${VERSION}"; exit 1;;
     m) INSTALL_MINICONDA=$OPTARG;;
     n) INSTALL_NEATSEQ_FLOW=$OPTARG;;
     r) rRNA_DATABASE=$OPTARG;;
@@ -67,7 +70,7 @@ if [ ${INSTALL_NEATSEQ_FLOW} -eq 1 ]; then
 
     echo;echo "Installing Neatseq Flow..."
     curl -LO https://raw.githubusercontent.com/bioinfo-core-BGU/NeatSeq-Flow-GUI/master/NeatSeq_Flow_GUI_installer.yaml
-    conda env create -f NeatSeq_Flow_GUI_installer.yaml
+    conda env create -f NeatSeq_Flow_GUI_installer.yaml --force
     echo;echo "Neatseq Flow Installation completed successfully!"
     rm -rf NeatSeq_Flow_GUI_installer.yaml
 
@@ -78,14 +81,14 @@ echo;echo "Creating DeSeq2 conda environment..."
 wget https://raw.githubusercontent.com/bioinfo-core-BGU/NeatSeq-Flow_Workflows/master/DeSeq_Workflow/DeSeq2_module/DeSeq2_env_install.yaml
 # Correct the version problem with biconductor-sva
 sed -i "s/bioconductor-sva=3.8/bioconductor-sva/g" DeSeq2_env_install.yaml
-conda env create -f DeSeq2_env_install.yaml
+conda env create -f DeSeq2_env_install.yaml --force
 echo;echo "DeSeq2 conda environment created successfully!"
 rm -rf DeSeq2_env_install.yaml
 
 echo;echo "Creating non_model_RNA_Seq conda environment..."
 # Create non_model_RNA_Seq conda environment and set it up
 wget https://raw.githubusercontent.com/olabiyi/non-model_RNA_Seq/master/non_model_RNA_Seq_conda.yaml
-conda env create -f non_model_RNA_Seq_conda.yaml
+conda env create -f non_model_RNA_Seq_conda.yaml --force
 source activate non_model_RNA_Seq
 echo;echo "non_model_RNA_Seq conda environment created successfully!"
 rm -rf non_model_RNA_Seq_conda.yaml

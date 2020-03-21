@@ -253,7 +253,6 @@ Step_params:
         tag:                01.Assembly #Assemble_Transcriptome
         qsub_params:
             -pe:            shared 50
-            node:           sge1033
         scope:              project
         setenv:             PATH="{Vars.paths.java}:{Vars.paths.bowtie2}:$PATH" PERL5LIB=""
         redirects:
