@@ -82,7 +82,7 @@ echo; echo "I will run  ${TAG} section(s) of ${PARAMETER_FILE}."
 
 
 # Activate Netaseq_flow and run
-source activate NeatSeq_Flow 
+conda activate NeatSeq_Flow || source activate NeatSeq_Flow 
 
 if [ $? -ne 0 ]; then
 

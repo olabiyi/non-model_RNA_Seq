@@ -119,7 +119,7 @@ else
 
 fi
 
-source activate non_model_RNA_Seq
+conda activate non_model_RNA_Seq || source activate non_model_RNA_Seq
 cd $CONDA_PREFIX/
 
 
@@ -238,4 +238,4 @@ echo;echo "Your template parameter file is non_model_RNA_Seq.yaml. You can edit 
 echo "Also do not delete any pound '#' sign in the file"
 echo;echo "Done! Your environment was configured successfully." 
 echo
-source deactivate 
+conda deactivate || source deactivate 

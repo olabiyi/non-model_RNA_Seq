@@ -73,7 +73,7 @@ while getopts ':hvp:s:m:S:r:t:g:c:b:n:q:T:M:R:C:' OPTION; do
 done
 
 # Activate the non_model_RNA_Seq conda environment
-source activate non_model_RNA_Seq 
+conda activate non_model_RNA_Seq || source activate non_model_RNA_Seq 
 
 if [ $? -ne 0 ]; then
     
@@ -297,9 +297,11 @@ fi
 
 
 
-DESEQ2=$(echo $CONDA_PREFIX| sed -e "s:envs/non_model_RNA_Seq::g")
-BUSCO_DATABASE=$(basename $BUSCO_DATABASE| sed -e "s/\.tar\.gz//g")
-RNA_DATABASE=$(ls $CONDA_PREFIX/databases/rRNA/*bwt | sed -E 's/\.bwt$//g')
+DESEQ2=$(echo $CONDA_PREFIX| sed -e "s:envs/non_model_RNA_Seq::g") || exit 1;
+BUSCO_DATABASE=$(basename $BUSCO_DATABASE| sed -e "s/\.tar\.gz//g") || exit 1;
+RNA_DATABASE=$(ls $CONDA_PREFIX/databases/rRNA/*bwt | sed -E 's/\.bwt$//g')|| \
+echo;echo "rRNA database does not exist. Please run configure.sh to install it. exiting..."; exit 1;
+
 
 declare -a TO_REPLACE=(RNA_DATABASE SAMPLE_MAPPING_FILE TRANSCRIPT_PREFIX TREATMENT_NAME
                        COMPARISON CONDA_PATH DESEQ2 BUSCO_DATABASE QSUB_Q QSUB_NODES 
@@ -328,10 +330,10 @@ declare inFile=$(grep -c "${TO_REPLACE[$i]}" "${PARAMETER_FILE}")
 
 done
 
-source deactivate 
+conda deactivate || source deactivate 
 
 # Activate Netaseq_flow and run
-source activate NeatSeq_Flow 
+conda activate NeatSeq_Flow || source activate NeatSeq_Flow 
 if [ $? -ne 0 ]; then
 
     echo "You have not installed NeatSeq_Flow." 
