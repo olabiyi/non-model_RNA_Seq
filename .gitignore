@@ -1,0 +1,9 @@
+.Rhistory
+Makefile
+_build/
+backUP_non_model_RNA_Seq.yaml
+conf.py
+index.rst
+make.bat
+test/
+with_tutorial_non_model_RNA_Seq.rst

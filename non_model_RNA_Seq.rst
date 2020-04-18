@@ -219,13 +219,13 @@ Setting-up the conda environments
     
        # If you don't have NeatSeq_Flow and Miniconda Installed run this line of code,
        #  replacing "path/to/rRNA_sequences.fasta" with the correct path to your rRNA sequences.
-       bash ./configure.sh -r path/to/rRNA_sequences.fasta -b metazoa_odb9.tar.gz >configure.log 2>&1 &
+       nohup bash ./configure.sh -r path/to/rRNA_sequences.fasta -b metazoa_odb9.tar.gz >configure.log 2>&1 &
     
        # If you already have NeatSeq_Flow and Miniconda Installed run this line of code,
        #  replacing "path/to/rRNA_sequences.fasta" with the correct path to your rRNA sequences.
-       bash ./configure.sh -m 0 -n 0 -r path/to/rRNA_sequences.fasta -b metazoa_odb9.tar.gz >configure.log 2>&1 &
+       nohup bash ./configure.sh -m 0 -n 0 -r path/to/rRNA_sequences.fasta -b metazoa_odb9.tar.gz >configure.log 2>&1 &
    
-       # Monitor the installation. Use "Cntrl + C" to exit the tail command.
+       # Monitor the installation. Use "Cntrl-C" to exit the tail command.
        tail -f configure.log
    
 
