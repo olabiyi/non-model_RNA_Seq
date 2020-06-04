@@ -161,7 +161,7 @@ function run_neatseq_flow(){
 	# SAMPLE_MAPPING_FILE - Samples to treatment mapping file.
     # run_neatseq_flow sample_data.nsfs non_model_RNA_Seq.yaml sample_grouping.txt
 
-    local SAMPLE_FILE =$1
+    	local SAMPLE_FILE=$1
 	local PARAMETER_FILE=$2
 	local SAMPLE_MAPPING_FILE=$3
 	local TAG=${4:-all} # set defualt tag to all
