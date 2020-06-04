@@ -2,8 +2,8 @@
 # GET thelocation of the step
 function print_step(){
     
-	# STEP - name of step with the PARAMETER_FILE to be printed
-	# PARAMETER_FILE - approriately formated parameter file.
+    # STEP - name of step with the PARAMETER_FILE to be printed
+    # PARAMETER_FILE - approriately formated parameter file.
 	
     # USAGE print_step <STEP_NAME> <PARAMETER_FILE>
     # EXAMPLE: print_step Import_reads: non_model_RNA_Seq.yaml
@@ -20,20 +20,20 @@ function print_step(){
 
 function insert_step() {
         
-		# STEP -  a multiline string containing the parameters to a step to be inserted
-		# AFTER_STEP - is the name of the step the new step "STEP" should be inserted
-		# PARAMETER_FILE - approriately formated parameter file.
+    # STEP -  a multiline string containing the parameters to a step to be inserted
+    # AFTER_STEP - is the name of the step the new step "STEP" should be inserted
+    # PARAMETER_FILE - approriately formated parameter file.
 		
-		# USAGE insert_step <MULTILINE_STEP_STRING> <INSERT_AFTER_STEP> <PARAMETER_FILE>
-		# EXAMPLE: insert_step ${MULTILINE_STEP_STRING} Import_reads non_model_RNA_Seq.yaml
-        local STEP=$1
-		local AFTER_STEP=$2
-		local PARAMETER_FILE=$3
+    # USAGE insert_step <MULTILINE_STEP_STRING> <INSERT_AFTER_STEP> <PARAMETER_FILE>
+    # EXAMPLE: insert_step ${MULTILINE_STEP_STRING} Import_reads non_model_RNA_Seq.yaml
+    local STEP=$1
+    local AFTER_STEP=$2
+    local PARAMETER_FILE=$3
 		
-		local AFTER_LINE=grep -En "^\s+#SKIP\s${AFTER_STEP}"  "${PARAMETER_FILE}"
+    local AFTER_LINE=grep -En "^\s+#SKIP\s${AFTER_STEP}"  "${PARAMETER_FILE}"
 		
-		(sed -n "1,${AFTER_LINE}p" "${PARAMETER_FILE}"; echo ${STEP}; \
-		sed -n "$(( AFTER_LINE+1 )),$p" "${PARAMETER_FILE}")
+    (sed -n "1,${AFTER_LINE}p" "${PARAMETER_FILE}"; echo ${STEP}; \
+     sed -n "$(( AFTER_LINE+1 )),$p" "${PARAMETER_FILE}")
 
 }
 
@@ -46,7 +46,7 @@ function rename_tag(){
 	# PARAMETER_FILE - approriately formated parameter file.
     # rename_tag "Import_reads,99.reanalyze,QC_imported_reads,99.reanalyze" non_model_RNA_Seq.yaml
     local STEPS2CHANGE=$1
-	local PARAMETER_FILE=$2
+    local PARAMETER_FILE=$2
 	
     # Rename tag
     STEPS2CHANGE=$(echo ${STEPS2CHANGE[*]} |sed -E 's/,(\s+)?/ /g') && STEPS2CHANGE=($STEPS2CHANGE)
@@ -95,7 +95,7 @@ function rename_tag(){
 
 function unskip_step(){
 
-	local PARAMETER_FILE=$2
+    local PARAMETER_FILE=$2
 
     # Ensure that no step has aleady been skipped in the parmeter file, if so, unskip them
     # find the lines that this script had previously tagged for skipping in a previous run
@@ -117,7 +117,7 @@ function unskip_step(){
 function skip_steps(){
 
     local SKIP_STEPS=$1
-	local PARAMETER_FILE=$2
+    local PARAMETER_FILE=$2
 	
     # Convert SKIP_STEPS into an array separated by spaces
     SKIP_STEPS=$(echo ${SKIP_STEPS}| sed -E 's/,(\s+)?/ /g') && SKIP_STEPS=($SKIP_STEPS)
@@ -161,10 +161,10 @@ function run_neatseq_flow(){
 	# SAMPLE_MAPPING_FILE - Samples to treatment mapping file.
     # run_neatseq_flow sample_data.nsfs non_model_RNA_Seq.yaml sample_grouping.txt
 
-    	local SAMPLE_FILE=$1
-	local PARAMETER_FILE=$2
-	local SAMPLE_MAPPING_FILE=$3
-	local TAG=${4:-all} # set defualt tag to all
+    local SAMPLE_FILE=$1
+    local PARAMETER_FILE=$2
+    local SAMPLE_MAPPING_FILE=$3
+    local TAG=${4:-all} # set defualt tag to all
 
     # Activate Netaseq_flow and run
     conda activate NeatSeq_Flow || source activate NeatSeq_Flow
